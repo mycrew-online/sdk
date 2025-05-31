@@ -7,6 +7,7 @@ import (
 	"github.com/mycrew-online/sdk/pkg/types"
 )
 
+// This is just temp for better API design. This needs to be more precise
 func parseSimConnectData(ppData uintptr, pcbData uint32) {
 	if ppData == 0 || pcbData == 0 {
 		fmt.Println("No data received")
@@ -42,5 +43,53 @@ func parseSimConnectData(ppData uintptr, pcbData uint32) {
 		fmt.Println("👋 QUIT received")
 	default:
 		fmt.Printf("❓ Unknown message type: %d\n", recv.DwID)
+	}
+}
+
+// parseSimConnectToChannelMessage converts SimConnect data to a channel message
+func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32) any {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast the pointer to the base SIMCONNECT_RECV structure
+	recv := (*types.SIMCONNECT_RECV)(unsafe.Pointer(ppData))
+
+	// Create a simple message structure for the channel
+	msg := map[string]any{
+		"size":       recv.DwSize,
+		"version":    recv.DwVersion,
+		"type":       getMessageTypeName(recv.DwID),
+		"id":         recv.DwID,
+		"data":       ppData,
+		"size_bytes": pcbData,
+	}
+
+	return msg
+}
+
+// getMessageTypeName converts message ID to readable string
+func getMessageTypeName(id types.SimConnectRecvID) string {
+	switch id {
+	case types.SIMCONNECT_RECV_ID_NULL:
+		return "NULL"
+	case types.SIMCONNECT_RECV_ID_EXCEPTION:
+		return "EXCEPTION"
+	case types.SIMCONNECT_RECV_ID_OPEN:
+		return "OPEN"
+	case types.SIMCONNECT_RECV_ID_QUIT:
+		return "QUIT"
+	case types.SIMCONNECT_RECV_ID_EVENT:
+		return "EVENT"
+	case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
+		return "SIMOBJECT_DATA"
+	case types.SIMCONNECT_RECV_ID_SYSTEM_STATE:
+		return "SYSTEM_STATE"
+	case types.SIMCONNECT_RECV_ID_ENUMERATE_INPUT_EVENTS:
+		return "ENUMERATE_INPUT_EVENTS"
+	case types.SIMCONNECT_RECV_ID_SUBSCRIBE_INPUT_EVENT:
+		return "SUBSCRIBE_INPUT_EVENT"
+	default:
+		return "UNKNOWN"
 	}
 }

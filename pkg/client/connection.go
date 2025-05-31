@@ -9,7 +9,7 @@ import (
 type Connection interface {
 	Open() error
 	Close() error
-	Listen() error
+	Listen() <-chan any
 }
 
 func (e *Engine) Open() error {
@@ -52,6 +52,15 @@ func (e *Engine) Open() error {
 func (e *Engine) Close() error {
 	if !e.system.IsConnected {
 		return fmt.Errorf("client and server have not opened connection, skipping")
+	}
+
+	// Signal graceful shutdown to dispatch goroutine
+	if e.cancel != nil {
+		e.cancel()
+		// Wait for dispatch to finish if done channel exists
+		if e.done != nil {
+			<-e.done
+		}
 	}
 
 	// Call SimConnect_Close

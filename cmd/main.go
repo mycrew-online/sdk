@@ -1,25 +1,63 @@
 package main
 
-import "github.com/mycrew-online/sdk/pkg/client"
+import (
+	"fmt"
+	"time"
+
+	"github.com/mycrew-online/sdk/pkg/client"
+)
 
 func main() {
-	// This is the main entry point for the application.
-	// Here we would typically initialize the client, connect to the SimConnect server,
-	// and start processing events or commands.
-	// For now, we will just print a message to indicate that the application has started.
-	println("SimConnect client application starting.")
+	fmt.Println("🚀 Testing graceful shutdown with channels...")
 
-	sdk := client.New("MySimConnectClient")
-	defer sdk.Close()
+	// Create a new SimConnect client
+	sdk := client.New("GracefulShutdownTest")
+	defer func() {
+		fmt.Println("🔄 Closing connection...")
+		if err := sdk.Close(); err != nil {
+			fmt.Printf("❌ Error closing: %v\n", err)
+		} else {
+			fmt.Println("✅ Connection closed gracefully")
+		}
+	}()
 
+	// Try to open connection (this might fail if MSFS is not running)
+	fmt.Println("📡 Attempting to connect to SimConnect...")
 	if err := sdk.Open(); err != nil {
-		println("Failed to open SimConnect client:", err.Error())
+		fmt.Printf("⚠️  Connection failed (MSFS not running?): %v\n", err)
+		fmt.Println("✅ Testing shutdown without connection...")
 		return
 	}
 
-	sdk.Listen()
+	fmt.Println("✅ Connected successfully!")
 
-	for {
+	// Start listening for messages
+	messages := sdk.Listen()
+	if messages == nil {
+		fmt.Println("❌ Failed to start listening")
+		return
 	}
 
+	fmt.Println("👂 Listening for messages for 5 seconds...")
+
+	// Listen for messages with a timeout
+	timeout := time.After(5 * time.Second)
+	messageCount := 0
+
+	for {
+		select {
+		case msg := <-messages:
+			if msg != nil {
+				messageCount++
+				if msgMap, ok := msg.(map[string]any); ok {
+					fmt.Printf("📨 Message %d: Type=%v, ID=%v\n",
+						messageCount, msgMap["type"], msgMap["id"])
+				}
+			}
+		case <-timeout:
+			fmt.Printf("⏰ Timeout reached. Received %d messages.\n", messageCount)
+			fmt.Println("🛑 Initiating graceful shutdown...")
+			return
+		}
+	}
 }

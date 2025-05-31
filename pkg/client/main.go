@@ -22,6 +22,7 @@ func NewWithCustomDLL(name string, path string) Connection {
 		dll:    dll(path),
 		name:   name,
 		system: state,
+		stream: make(chan any), // Buffered channel for message processing???
 	}
 
 	// TODO Error handling for DLL loading???
