@@ -9,6 +9,7 @@ import (
 type Connection interface {
 	Open() error
 	Close() error
+	Listen() error
 }
 
 func (e *Engine) Open() error {

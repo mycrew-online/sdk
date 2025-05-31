@@ -16,4 +16,10 @@ func main() {
 		println("Failed to open SimConnect client:", err.Error())
 		return
 	}
+
+	sdk.Listen()
+
+	for {
+	}
+
 }
