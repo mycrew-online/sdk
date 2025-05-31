@@ -51,7 +51,8 @@ func (e *Engine) Open() error {
 
 func (e *Engine) Close() error {
 	if !e.system.IsConnected {
-		return fmt.Errorf("client and server have not opened connection, skipping")
+		return nil // No need to close if not connected
+		//return fmt.Errorf("client and server have not opened connection, skipping")
 	}
 
 	// Signal graceful shutdown to dispatch goroutine
