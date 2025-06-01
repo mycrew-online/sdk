@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"syscall"
+
+	"github.com/mycrew-online/sdk/pkg/types"
 )
 
 type Engine struct {
@@ -23,6 +25,9 @@ type Engine struct {
 	contextOnce sync.Once    // Ensures context initialization happens only once
 	closeOnce   sync.Once    // Ensures Close() is called only once
 	isListening bool         // Protected by mu, tracks if listening is active
+
+	// Data type tracking for sim variables
+	dataTypeRegistry map[uint32]types.SimConnectDataType // DefineID → DataType mapping
 }
 
 type SystemState struct {

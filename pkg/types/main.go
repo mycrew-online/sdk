@@ -33,3 +33,13 @@ const (
 	SIMCONNECT_DATATYPE_LATLONALT                              // Latitude, longitude, and altitude
 	SIMCONNECT_DATATYPE_XYZ                                    // XYZ coordinates
 )
+
+// SIMCONNECT_OBJECT_ID defines object identifiers
+const (
+	SIMCONNECT_OBJECT_ID_USER uint32 = 0 // User aircraft
+)
+
+// SIMCONNECT_DATA_REQUEST_FLAG defines data request flags
+const (
+	SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT uint32 = 0 // Default request flags
+)

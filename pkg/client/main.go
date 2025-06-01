@@ -1,6 +1,10 @@
 package client
 
-import "syscall"
+import (
+	"syscall"
+
+	"github.com/mycrew-online/sdk/pkg/types"
+)
 
 const (
 	DLL_DEFAULT_PATH = "C:/MSFS 2024 SDK/SimConnect SDK/lib/SimConnect.dll"
@@ -19,12 +23,12 @@ func NewWithCustomDLL(name string, path string) Connection {
 	state := &SystemState{
 		IsConnected: false,
 	}
-
 	client := &Engine{
-		dll:    dll(path),
-		name:   name,
-		system: state,
-		stream: make(chan any, DEFAULT_STREAM_BUFFER_SIZE), // Buffered channel for message processing
+		dll:              dll(path),
+		name:             name,
+		system:           state,
+		stream:           make(chan any, DEFAULT_STREAM_BUFFER_SIZE), // Buffered channel for message processing
+		dataTypeRegistry: make(map[uint32]types.SimConnectDataType),  // Initialize data type tracking
 	}
 
 	// TODO Error handling for DLL loading???

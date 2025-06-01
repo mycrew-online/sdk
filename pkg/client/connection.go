@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
+
+	"github.com/mycrew-online/sdk/pkg/types"
 )
 
 type Connection interface {
 	Open() error
 	Close() error
 	Listen() <-chan any
+	AddSimVar(defID uint32, varName string, units string, dataType types.SimConnectDataType) error
+	RequestSimVarData(defID uint32, requestID uint32) error
 }
 
 func (e *Engine) Open() error {

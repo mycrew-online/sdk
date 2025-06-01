@@ -7,6 +7,27 @@ type SIMCONNECT_RECV struct {
 	DwID      SimConnectRecvID // Message ID
 }
 
+// SIMCONNECT_RECV_SIMOBJECT_DATA represents SimObject data received from SimConnect
+type SIMCONNECT_RECV_SIMOBJECT_DATA struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwRequestID     uint32 // ID of the client defined request
+	DwObjectID      uint32 // ID of the client defined object
+	DwDefineID      uint32 // ID of the client defined data definition
+	DwFlags         uint32 // Flags that were set for this data request
+	DwEntryNumber   uint32 // Index number of this object (1-based)
+	DwOutOf         uint32 // Total number of objects being returned
+	DwDefineCount   uint32 // Number of 8-byte elements in the data array
+	DwData          uint32 // Start of data array (actual data follows)
+}
+
+// SIMCONNECT_RECV_EXCEPTION represents exception information from SimConnect
+type SIMCONNECT_RECV_EXCEPTION struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwException     uint32 // Exception code
+	DwSendID        uint32 // ID of the packet that caused the exception
+	DwIndex         uint32 // Index number for some exceptions
+}
+
 type SimConnectRecvID uint32
 
 // SIMCONNECT_RECV_ID defines all possible message types that can be received from SimConnect
