@@ -15,16 +15,16 @@ type Connection interface {
 func (e *Engine) Open() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	// Thread-safe check for connection status
 	e.system.mu.RLock()
 	isConnected := e.system.IsConnected
 	e.system.mu.RUnlock()
-	
+
 	if isConnected {
 		return fmt.Errorf("client, server connection is already open, skipping")
 	}
-	
+
 	// Convert name to null-terminated byte array
 	nameBytes, err := syscall.BytePtrFromString(e.name)
 	if err != nil {
@@ -63,14 +63,14 @@ func (e *Engine) Open() error {
 
 func (e *Engine) Close() error {
 	var closeErr error
-	
+
 	// Use sync.Once to ensure close operations happen only once
 	e.closeOnce.Do(func() {
 		// Thread-safe check for connection status first
 		e.system.mu.RLock()
 		isConnected := e.system.IsConnected
 		e.system.mu.RUnlock()
-		
+
 		if !isConnected {
 			closeErr = nil // No need to close if not connected
 			return
@@ -109,7 +109,7 @@ func (e *Engine) Close() error {
 		e.system.mu.Lock()
 		e.system.IsConnected = false
 		e.system.mu.Unlock()
-		
+
 		e.handle = 0
 		e.isListening = false
 

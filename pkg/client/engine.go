@@ -18,11 +18,11 @@ type Engine struct {
 	cancel context.CancelFunc
 	done   chan struct{}
 	// Async safety controls
-	mu           sync.RWMutex  // Protects shared state
-	startOnce    sync.Once     // Ensures Listen() is called only once
-	contextOnce  sync.Once     // Ensures context initialization happens only once
-	closeOnce    sync.Once     // Ensures Close() is called only once
-	isListening  bool          // Protected by mu, tracks if listening is active
+	mu          sync.RWMutex // Protects shared state
+	startOnce   sync.Once    // Ensures Listen() is called only once
+	contextOnce sync.Once    // Ensures context initialization happens only once
+	closeOnce   sync.Once    // Ensures Close() is called only once
+	isListening bool         // Protected by mu, tracks if listening is active
 }
 
 type SystemState struct {

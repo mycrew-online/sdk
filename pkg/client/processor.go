@@ -11,7 +11,7 @@ func (e *Engine) Listen() <-chan any {
 	e.system.mu.RLock()
 	isConnected := e.system.IsConnected
 	e.system.mu.RUnlock()
-	
+
 	if !isConnected {
 		return nil // No messages to process if not connected
 	}
@@ -20,7 +20,7 @@ func (e *Engine) Listen() <-chan any {
 	e.mu.RLock()
 	alreadyListening := e.isListening
 	e.mu.RUnlock()
-	
+
 	if alreadyListening {
 		return e.stream // Return existing stream if already listening
 	}
@@ -36,7 +36,7 @@ func (e *Engine) Listen() <-chan any {
 		e.mu.Lock()
 		e.isListening = true
 		e.mu.Unlock()
-		
+
 		// Start a goroutine to dispatch messages and not block the main thread
 		go func() {
 			defer close(e.done)
@@ -59,7 +59,7 @@ func (e *Engine) dispatch() error {
 	e.system.mu.RLock()
 	isConnected := e.system.IsConnected
 	e.system.mu.RUnlock()
-	
+
 	if !isConnected {
 		return nil // No messages to process if not connected
 	}
@@ -109,7 +109,7 @@ func (e *Engine) handleMessage(ppData uintptr, pcbData uint32) {
 		e.system.mu.Lock()
 		e.system.IsConnected = false
 		e.system.mu.Unlock()
-		
+
 		if e.cancel != nil {
 			e.cancel() // Signal shutdown
 		}
