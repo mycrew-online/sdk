@@ -4,6 +4,8 @@ import "syscall"
 
 const (
 	DLL_DEFAULT_PATH = "C:/MSFS 2024 SDK/SimConnect SDK/lib/SimConnect.dll"
+	// Default buffer size for the message stream channel
+	DEFAULT_STREAM_BUFFER_SIZE = 100
 )
 
 func New(name string) Connection {
@@ -22,7 +24,7 @@ func NewWithCustomDLL(name string, path string) Connection {
 		dll:    dll(path),
 		name:   name,
 		system: state,
-		stream: make(chan any), // Buffered channel for message processing???
+		stream: make(chan any, DEFAULT_STREAM_BUFFER_SIZE), // Buffered channel for message processing
 	}
 
 	// TODO Error handling for DLL loading???

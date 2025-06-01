@@ -7,30 +7,60 @@ import (
 )
 
 func (e *Engine) Listen() <-chan any {
-	if !e.system.IsConnected {
+	// Thread-safe check for connection status
+	e.system.mu.RLock()
+	isConnected := e.system.IsConnected
+	e.system.mu.RUnlock()
+	
+	if !isConnected {
 		return nil // No messages to process if not connected
 	}
 
-	// Initialize context for graceful shutdown if not already done
-	if e.ctx == nil {
-		e.ctx, e.cancel = context.WithCancel(context.Background())
-		e.done = make(chan struct{})
+	// Thread-safe check if already listening
+	e.mu.RLock()
+	alreadyListening := e.isListening
+	e.mu.RUnlock()
+	
+	if alreadyListening {
+		return e.stream // Return existing stream if already listening
 	}
 
-	// Start a goroutine to dispatch messages and not block the main thread
-	go func() {
-		defer close(e.done)
-		if err := e.dispatch(); err != nil {
-			// Handle error (e.g., log it)
-			// fmt.Println("Error in dispatch:", err)
-		}
-	}()
+	// Use sync.Once to ensure context and goroutine are initialized only once
+	e.contextOnce.Do(func() {
+		e.ctx, e.cancel = context.WithCancel(context.Background())
+		e.done = make(chan struct{})
+	})
+
+	// Use sync.Once to ensure only one dispatch goroutine is started
+	e.startOnce.Do(func() {
+		e.mu.Lock()
+		e.isListening = true
+		e.mu.Unlock()
+		
+		// Start a goroutine to dispatch messages and not block the main thread
+		go func() {
+			defer close(e.done)
+			if err := e.dispatch(); err != nil {
+				// Handle error (e.g., log it)
+				// fmt.Println("Error in dispatch:", err)
+			}
+			// Mark as no longer listening when dispatch exits
+			e.mu.Lock()
+			e.isListening = false
+			e.mu.Unlock()
+		}()
+	})
 
 	return e.stream
 }
 
 func (e *Engine) dispatch() error {
-	if !e.system.IsConnected {
+	// Thread-safe check for connection status
+	e.system.mu.RLock()
+	isConnected := e.system.IsConnected
+	e.system.mu.RUnlock()
+	
+	if !isConnected {
 		return nil // No messages to process if not connected
 	}
 
@@ -45,9 +75,14 @@ func (e *Engine) dispatch() error {
 			var ppData uintptr
 			var pcbData uint32
 
+			// Thread-safe access to handle
+			e.mu.RLock()
+			handle := e.handle
+			e.mu.RUnlock()
+
 			// Call SimConnect_GetNextDispatch
 			responseDispatch, _, _ := SimConnect_GetNextDispatch.Call(
-				uintptr(e.handle),                 // hSimConnect
+				uintptr(handle),                   // hSimConnect
 				uintptr(unsafe.Pointer(&ppData)),  // ppData
 				uintptr(unsafe.Pointer(&pcbData)), // pcbData
 			)
@@ -70,19 +105,25 @@ func (e *Engine) handleMessage(ppData uintptr, pcbData uint32) {
 
 	// Handle QUIT messages for natural shutdown
 	if msg != nil && e.isQuitMessage(msg) {
+		// Thread-safe update of connection status
+		e.system.mu.Lock()
 		e.system.IsConnected = false
+		e.system.mu.Unlock()
+		
 		if e.cancel != nil {
 			e.cancel() // Signal shutdown
 		}
 		return
 	}
 
-	// Send to stream if channel is available (non-blocking)
+	// Send to stream if channel is available (non-blocking with buffered channel)
 	if msg != nil {
 		select {
 		case e.stream <- msg:
+			// Message sent successfully
 		default:
 			// Channel full, drop message to prevent blocking
+			// Consider logging this event for debugging
 		}
 	}
 }

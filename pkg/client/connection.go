@@ -13,9 +13,18 @@ type Connection interface {
 }
 
 func (e *Engine) Open() error {
-	if e.system.IsConnected {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	
+	// Thread-safe check for connection status
+	e.system.mu.RLock()
+	isConnected := e.system.IsConnected
+	e.system.mu.RUnlock()
+	
+	if isConnected {
 		return fmt.Errorf("client, server connection is already open, skipping")
 	}
+	
 	// Convert name to null-terminated byte array
 	nameBytes, err := syscall.BytePtrFromString(e.name)
 	if err != nil {
@@ -44,38 +53,68 @@ func (e *Engine) Open() error {
 		return fmt.Errorf("SimConnect_Open succeeded but handle is null")
 	}
 
+	// Thread-safe update of connection status
+	e.system.mu.Lock()
 	e.system.IsConnected = true
+	e.system.mu.Unlock()
 
 	return nil
 }
 
 func (e *Engine) Close() error {
-	if !e.system.IsConnected {
-		return nil // No need to close if not connected
-		//return fmt.Errorf("client and server have not opened connection, skipping")
-	}
-
-	// Signal graceful shutdown to dispatch goroutine
-	if e.cancel != nil {
-		e.cancel()
-		// Wait for dispatch to finish if done channel exists
-		if e.done != nil {
-			<-e.done
+	var closeErr error
+	
+	// Use sync.Once to ensure close operations happen only once
+	e.closeOnce.Do(func() {
+		// Thread-safe check for connection status first
+		e.system.mu.RLock()
+		isConnected := e.system.IsConnected
+		e.system.mu.RUnlock()
+		
+		if !isConnected {
+			closeErr = nil // No need to close if not connected
+			return
 		}
-	}
 
-	// Call SimConnect_Close
-	// HRESULT SimConnect_Close(HANDLE hSimConnect)
-	hresult, _, _ := SimConnect_Close.Call(e.handle)
+		// Get cancel function and done channel while holding lock briefly
+		e.mu.Lock()
+		cancel := e.cancel
+		done := e.done
+		e.mu.Unlock()
 
-	response := uint32(hresult)
+		// Signal graceful shutdown to dispatch goroutine (without holding the main mutex)
+		if cancel != nil {
+			cancel()
+			// Wait for dispatch to finish if done channel exists
+			if done != nil {
+				<-done
+			}
+		}
+		// Now acquire the lock for the actual close operations
+		e.mu.Lock()
+		defer e.mu.Unlock()
 
-	if !IsHRESULTSuccess(response) {
-		return fmt.Errorf("SimConnect_Close failed with HRESULT: 0x%08X", response)
-	}
+		// Call SimConnect_Close
+		// HRESULT SimConnect_Close(HANDLE hSimConnect)
+		hresult, _, _ := SimConnect_Close.Call(e.handle)
 
-	e.system.IsConnected = false
-	e.handle = 0
+		response := uint32(hresult)
 
-	return nil
+		if !IsHRESULTSuccess(response) {
+			closeErr = fmt.Errorf("SimConnect_Close failed with HRESULT: 0x%08X", response)
+			return
+		}
+
+		// Thread-safe update of connection status and handle
+		e.system.mu.Lock()
+		e.system.IsConnected = false
+		e.system.mu.Unlock()
+		
+		e.handle = 0
+		e.isListening = false
+
+		closeErr = nil
+	})
+
+	return closeErr
 }
