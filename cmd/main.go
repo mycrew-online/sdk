@@ -127,7 +127,6 @@ func main() {
 		fmt.Println("❌ Failed to start listening")
 		return
 	}
-
 	fmt.Println("👂 Listening for messages for 5 seconds...")
 
 	// Listen for messages with a timeout
@@ -142,6 +141,27 @@ func main() {
 				if msgMap, ok := msg.(map[string]any); ok {
 					fmt.Printf("📨 Message %d: Type=%v, ID=%v\n",
 						messageCount, msgMap["type"], msgMap["id"])
+					// If this is SIMOBJECT_DATA, check for parsed data
+					if msgMap["type"] == "SIMOBJECT_DATA" {
+						// Check if we have pre-parsed data available
+						if parsedData, exists := msgMap["parsed_data"]; exists {
+							// Try to cast to SimVarData (we need to import the client package for this)
+							fmt.Printf("   📈 PARSED DATA AVAILABLE: %+v (type: %T)\n", parsedData, parsedData)
+
+							// For now, let's access it as a map or try to extract fields
+							if simVarData, ok := parsedData.(*client.SimVarData); ok {
+								fmt.Printf("   ✨ VALUE: RequestID=%d, DefineID=%d, Value=%v (type: %T)\n",
+									simVarData.RequestID, simVarData.DefineID, simVarData.Value, simVarData.Value)
+							} else {
+								fmt.Printf("   ⚠️  Could not cast parsed_data to SimVarData, got type: %T\n", parsedData)
+							}
+						} else {
+							fmt.Printf("   ⚠️  No parsed_data field found in SIMOBJECT_DATA message\n")
+						}
+
+						// Show what we have access to
+						fmt.Printf("   📋 Available message fields: %v\n", getMapKeys(msgMap))
+					}
 				}
 			}
 		case <-timeout:
@@ -150,4 +170,13 @@ func main() {
 			return
 		}
 	}
+}
+
+// Helper function to get map keys for debugging
+func getMapKeys(m map[string]any) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
