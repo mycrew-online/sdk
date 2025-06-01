@@ -102,7 +102,6 @@ func (e *Engine) dispatch() error {
 func (e *Engine) handleMessage(ppData uintptr, pcbData uint32) {
 	// Parse the message
 	msg := parseSimConnectToChannelMessage(ppData, pcbData)
-
 	// Handle QUIT messages for natural shutdown
 	if msg != nil && e.isQuitMessage(msg) {
 		// Thread-safe update of connection status
@@ -110,8 +109,13 @@ func (e *Engine) handleMessage(ppData uintptr, pcbData uint32) {
 		e.system.IsConnected = false
 		e.system.mu.Unlock()
 
-		if e.cancel != nil {
-			e.cancel() // Signal shutdown
+		// Thread-safe access to cancel function
+		e.mu.RLock()
+		cancel := e.cancel
+		e.mu.RUnlock()
+
+		if cancel != nil {
+			cancel() // Signal shutdown
 		}
 		return
 	}
