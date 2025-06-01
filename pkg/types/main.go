@@ -43,3 +43,8 @@ const (
 const (
 	SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT uint32 = 0 // Default request flags
 )
+
+// SIMCONNECT_DATA_SET_FLAG defines data set flags
+const (
+	SIMCONNECT_DATA_SET_FLAG_DEFAULT uint32 = 0 // Default set flags
+)
