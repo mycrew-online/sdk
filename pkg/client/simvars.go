@@ -94,6 +94,77 @@ func (e *Engine) RequestSimVarData(defID uint32, requestID uint32) error {
 	return nil
 }
 
+// RequestSimVarDataPeriodic requests data for a previously registered sim variable with a specified frequency
+// This allows for continuous data updates at the specified period
+func (e *Engine) RequestSimVarDataPeriodic(defID uint32, requestID uint32, period types.SimConnectPeriod) error {
+	// Thread-safe check for connection
+	e.system.mu.RLock()
+	isConnected := e.system.IsConnected
+	e.system.mu.RUnlock()
+
+	if !isConnected {
+		return fmt.Errorf("not connected to simulator")
+	}
+
+	// Thread-safe access to handle
+	e.mu.RLock()
+	handle := e.handle
+	e.mu.RUnlock()
+
+	// Call SimConnect_RequestDataOnSimObject with the specified period
+	hresult, _, _ := SimConnect_RequestDataOnSimObject.Call(
+		uintptr(handle),                          // hSimConnect
+		uintptr(requestID),                       // RequestID
+		uintptr(defID),                           // DefineID
+		uintptr(types.SIMCONNECT_OBJECT_ID_USER), // ObjectID (user aircraft)
+		uintptr(period),                          // Period (periodic request)
+		uintptr(types.SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT), // Flags
+		0, // origin
+		0, // interval
+		0, // limit
+	)
+
+	if !IsHRESULTSuccess(uint32(hresult)) {
+		return fmt.Errorf("SimConnect_RequestDataOnSimObject periodic failed: 0x%08X", uint32(hresult))
+	}
+	return nil
+}
+
+// StopPeriodicRequest stops a periodic data request by requesting it with SIMCONNECT_PERIOD_NEVER
+func (e *Engine) StopPeriodicRequest(requestID uint32) error {
+	// Thread-safe check for connection
+	e.system.mu.RLock()
+	isConnected := e.system.IsConnected
+	e.system.mu.RUnlock()
+
+	if !isConnected {
+		return fmt.Errorf("not connected to simulator")
+	}
+
+	// Thread-safe access to handle
+	e.mu.RLock()
+	handle := e.handle
+	e.mu.RUnlock()
+
+	// Call SimConnect_RequestDataOnSimObject with NEVER period to stop updates
+	hresult, _, _ := SimConnect_RequestDataOnSimObject.Call(
+		uintptr(handle),                          // hSimConnect
+		uintptr(requestID),                       // RequestID
+		0,                                        // DefineID (can be 0 when stopping)
+		uintptr(types.SIMCONNECT_OBJECT_ID_USER), // ObjectID (user aircraft)
+		uintptr(types.SIMCONNECT_PERIOD_NEVER),   // Period (NEVER to stop)
+		uintptr(types.SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT), // Flags
+		0, // origin
+		0, // interval
+		0, // limit
+	)
+
+	if !IsHRESULTSuccess(uint32(hresult)) {
+		return fmt.Errorf("SimConnect_RequestDataOnSimObject stop failed: 0x%08X", uint32(hresult))
+	}
+	return nil
+}
+
 // SetSimVar sets data on a simulation object for a previously registered sim variable
 // Baby Step 3A: Generic method that uses the data type registry for proper type conversion
 func (e *Engine) SetSimVar(defID uint32, value interface{}) error {

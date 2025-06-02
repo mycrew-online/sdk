@@ -120,7 +120,6 @@ func main() {
 			fmt.Println("✅ RequestSimVarData (TITLE) succeeded!")
 		}
 	}
-
 	// Test exception handling by trying to use an invalid SimVar
 	fmt.Println("🧪 Testing exception handling with invalid SimVar...")
 	if err := sdk.AddSimVar(999, "INVALID_VAR_NAME", "invalid_unit", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
@@ -135,20 +134,76 @@ func main() {
 		}
 	}
 
+	// Test 6: Periodic data requests
+	fmt.Println("🧪 Testing periodic data requests...")
+	// Add a variable specifically for periodic testing
+	fmt.Println("🧪 Adding AIRSPEED INDICATED for periodic testing...")
+	if err := sdk.AddSimVar(5, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ AddSimVar (AIRSPEED) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ AddSimVar (AIRSPEED) succeeded!")
+
+		// Start periodic request every visual frame
+		fmt.Println("🧪 Starting periodic request for AIRSPEED (every visual frame)...")
+		if err := sdk.RequestSimVarDataPeriodic(5, 500, types.SIMCONNECT_PERIOD_VISUAL_FRAME); err != nil {
+			fmt.Printf("❌ RequestSimVarDataPeriodic (AIRSPEED) failed: %v\n", err)
+		} else {
+			fmt.Println("✅ RequestSimVarDataPeriodic (AIRSPEED) succeeded! Data will flow continuously...")
+		}
+	}
+	// Add another variable for periodic testing with different frequency
+	fmt.Println("🧪 Adding PLANE LATITUDE for periodic testing...")
+	if err := sdk.AddSimVar(6, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ AddSimVar (LATITUDE) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ AddSimVar (LATITUDE) succeeded!")
+
+		// Start periodic request every second
+		fmt.Println("🧪 Starting periodic request for LATITUDE (every second)...")
+		if err := sdk.RequestSimVarDataPeriodic(6, 600, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+			fmt.Printf("❌ RequestSimVarDataPeriodic (LATITUDE) failed: %v\n", err)
+		} else {
+			fmt.Println("✅ RequestSimVarDataPeriodic (LATITUDE) succeeded! Data will arrive every second...")
+		}
+	}
 	// Start listening for messages
 	messages := sdk.Listen()
 	if messages == nil {
 		fmt.Println("❌ Failed to start listening")
 		return
 	}
-	fmt.Println("👂 Listening for messages for 5 seconds...")
+	fmt.Println("👂 Listening for messages for 8 seconds...")
+	fmt.Println("   📊 Expect to see periodic data for AIRSPEED (every frame) and LATITUDE (every second)")
+	fmt.Println("   🛑 Will stop periodic requests after 3 seconds...")
 
-	// Listen for messages with a timeout
-	timeout := time.After(5 * time.Second)
+	// Listen for messages with a timeout and periodic stop demonstration
+	timeout := time.After(8 * time.Second)
+	stopPeriodicTimer := time.After(3 * time.Second)
 	messageCount := 0
-
+	periodicStopped := false
 	for {
 		select {
+		case <-stopPeriodicTimer:
+			if !periodicStopped {
+				fmt.Println("🛑 Stopping periodic data requests...")
+
+				// Stop the airspeed periodic request
+				if err := sdk.StopPeriodicRequest(500); err != nil {
+					fmt.Printf("❌ Failed to stop AIRSPEED periodic request: %v\n", err)
+				} else {
+					fmt.Println("✅ AIRSPEED periodic request stopped")
+				}
+
+				// Stop the latitude periodic request
+				if err := sdk.StopPeriodicRequest(600); err != nil {
+					fmt.Printf("❌ Failed to stop LATITUDE periodic request: %v\n", err)
+				} else {
+					fmt.Println("✅ LATITUDE periodic request stopped")
+				}
+
+				periodicStopped = true
+				fmt.Println("📊 Continuing to listen for remaining 5 seconds (should see fewer messages now)...")
+			}
 		case msg := <-messages:
 			if msg != nil {
 				messageCount++
@@ -173,9 +228,7 @@ func main() {
 
 				if msgMap, ok := msg.(map[string]any); ok {
 					fmt.Printf("📨 Message %d: Type=%v, ID=%v\n",
-						messageCount, msgMap["type"], msgMap["id"])
-
-					// Handle different message types
+						messageCount, msgMap["type"], msgMap["id"]) // Handle different message types
 					switch msgMap["type"] {
 					case "SIMOBJECT_DATA":
 						// Check if we have pre-parsed data available
@@ -207,7 +260,12 @@ func main() {
 				}
 			}
 		case <-timeout:
-			fmt.Printf("⏰ Timeout reached. Received %d messages.\n", messageCount)
+			fmt.Printf("⏰ Timeout reached. Received %d messages total.\n", messageCount)
+			if !periodicStopped {
+				fmt.Println("🛑 Cleaning up: Stopping any remaining periodic requests...")
+				sdk.StopPeriodicRequest(500)
+				sdk.StopPeriodicRequest(600)
+			}
 			fmt.Println("🛑 Initiating graceful shutdown...")
 			return
 		}

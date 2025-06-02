@@ -14,6 +14,8 @@ type Connection interface {
 	Listen() <-chan any
 	AddSimVar(defID uint32, varName string, units string, dataType types.SimConnectDataType) error
 	RequestSimVarData(defID uint32, requestID uint32) error
+	RequestSimVarDataPeriodic(defID uint32, requestID uint32, period types.SimConnectPeriod) error
+	StopPeriodicRequest(requestID uint32) error
 	SetSimVar(defID uint32, value interface{}) error
 }
 
