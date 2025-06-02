@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"unsafe"
 
 	"github.com/mycrew-online/sdk/pkg/types"
@@ -327,19 +328,58 @@ func parseEventData(ppData uintptr, pcbData uint32, engine *Engine) *types.Event
 	if eventData.DwID != types.SIMCONNECT_RECV_ID_EVENT {
 		return nil
 	}
-
 	// Create event data structure for channel message
 	result := &types.EventData{
-		GroupID:   eventData.DwGroupID,
-		EventID:   eventData.DwEventID,
+		GroupID:   eventData.UGroupID,
+		EventID:   eventData.UEventID,
 		EventData: eventData.DwData,
 		EventType: "unknown", // Default type
-	} // TODO: Add event name lookup when event registry is implemented
-	// For now, we'll use the event ID and assume they're system events
-	// since we're starting with system event subscriptions
-	result.EventType = "system"
+	}
+
+	// Classify event type and resolve event name based on EventID
+	result.EventType, result.EventName = classifyEvent(eventData.UEventID, eventData.UGroupID)
 
 	return result
+}
+
+// classifyEvent determines the event type and name based on EventID and GroupID
+// According to SimConnect documentation:
+// - System events: Predefined simulator events (Paused, Unpaused, etc.)
+// - Client events: Events transmitted by clients (our electrical events)
+func classifyEvent(eventID uint32, groupID uint32) (eventType string, eventName string) {
+	// Map of our known client event IDs to their names
+	clientEvents := map[uint32]string{
+		10011511: "TOGGLE_EXTERNAL_POWER", // Our electrical system events
+		10025115: "TOGGLE_MASTER_BATTERY",
+		10041515: "TOGGLE_BEACON_LIGHTS",
+	}
+
+	// Check if this is one of our client events
+	if name, exists := clientEvents[eventID]; exists {
+		return "client", name
+	}
+
+	// Check for known system events (extend as needed)
+	// System events typically have different ID ranges and patterns
+	systemEvents := map[uint32]string{
+		1: "Paused",
+		2: "Unpaused",
+		3: "Sim",
+		// Add more system events as discovered
+	}
+
+	if name, exists := systemEvents[eventID]; exists {
+		return "system", name
+	}
+
+	// For unknown events, classify based on patterns or group ID
+	// GroupID of UNKNOWN_GROUP (DWORD_MAX) often indicates system events
+	if groupID == 0xFFFFFFFF { // UNKNOWN_GROUP (DWORD_MAX)
+		return "system", fmt.Sprintf("SystemEvent_%d", eventID)
+	}
+
+	// Default: assume client event with unknown name
+	return "client", fmt.Sprintf("ClientEvent_%d", eventID)
 }
 
 // isSystemEvent determines if an event name represents a system event

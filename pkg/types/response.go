@@ -39,11 +39,12 @@ type ExceptionData struct {
 }
 
 // SIMCONNECT_RECV_EVENT represents event information received from SimConnect
+// Field names match official SimConnect documentation
 type SIMCONNECT_RECV_EVENT struct {
 	SIMCONNECT_RECV        // Inherits from base structure
-	DwGroupID       uint32 // ID of the client defined group
-	DwEventID       uint32 // ID of the client defined event
-	DwData          uint32 // Event data (varies by event type)
+	UGroupID        uint32 // ID of the client defined group (uGroupID in official docs)
+	UEventID        uint32 // ID of the client defined event (uEventID in official docs)
+	DwData          uint32 // Event data - usually zero, but some events require additional qualification
 }
 
 // EventData represents a parsed SimConnect event for channel messages
