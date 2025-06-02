@@ -124,22 +124,34 @@ err = sdk.StopPeriodicRequest(200)
 
 ### System Event Subscription
 
-Subscribe to simulator events like pause, aircraft loading, etc.
+Subscribe to simulator events like pause, aircraft loading, etc. Events can carry data values that provide additional context.
 
 ```go
-// Subscribe to pause events
+// Subscribe to system events that carry data values
 err := sdk.SubscribeToSystemEvent(1010, "Pause")
+err := sdk.SubscribeToSystemEvent(1020, "AircraftLoaded")
+err := sdk.SubscribeToSystemEvent(1030, "FlightLoaded")
 
-// Subscribe to aircraft loading events  
-err = sdk.SubscribeToSystemEvent(1020, "AircraftLoaded")
-
-// Listen for events in the message channel
+// Listen for events with their data values
 for msg := range messages {
     if msgMap, ok := msg.(map[string]any); ok {
         if msgMap["type"] == "EVENT" {
             if eventData, exists := msgMap["event"]; exists {
                 if event, ok := eventData.(*types.EventData); ok {
-                    fmt.Printf("Event: %s (Type: %s)\n", event.EventName, event.EventType)
+                    fmt.Printf("Event: %s (Type: %s, Value: %d)\n", 
+                        event.EventName, event.EventType, event.EventData)
+                    
+                    // Event values can contain important state information
+                    switch event.EventName {
+                    case "Pause":
+                        if event.EventData == 1 {
+                            fmt.Println("Simulator paused")
+                        } else {
+                            fmt.Println("Simulator unpaused")
+                        }
+                    case "AircraftLoaded":
+                        fmt.Printf("Aircraft loaded with ID: %d\n", event.EventData)
+                    }
                 }
             }
         }
@@ -170,14 +182,26 @@ err = sdk.SetNotificationGroupPriority(2000, types.SIMCONNECT_GROUP_PRIORITY_HIG
 err = sdk.AddClientEventToNotificationGroup(2000, EVENT_ID_TOGGLE_EXTERNAL_POWER, false)
 err = sdk.AddClientEventToNotificationGroup(2000, EVENT_ID_TOGGLE_MASTER_BATTERY, false)
 
-// Transmit events to control aircraft
+// Transmit events to control aircraft (can include data values)
 err = sdk.TransmitClientEvent(
     types.SIMCONNECT_OBJECT_ID_USER, 
     EVENT_ID_TOGGLE_EXTERNAL_POWER, 
-    0, 
+    0, // Event data value - 0 for simple toggle
     2000, 
     types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
 )
+
+// Client events can also carry data values when transmitted
+err = sdk.TransmitClientEvent(
+    types.SIMCONNECT_OBJECT_ID_USER, 
+    EVENT_ID_SET_FREQUENCY, 
+    123450, // Frequency value in Hz * 10
+    2000, 
+    types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+)
+
+// When the event is received back, the data value will be available
+// in the EventData field of the parsed event
 ```
 
 ### Setting Simulation Variables
@@ -298,7 +322,7 @@ type SimVarData struct {
 type EventData struct {
     GroupID   uint32  // Notification group ID
     EventID   uint32  // Event identifier
-    EventData uint32  // Event data payload
+    EventData uint32  // Event data payload - contains the actual event value
     EventType string  // "system" or "client"
     EventName string  // Human-readable event name
 }
@@ -410,6 +434,56 @@ func monitorElectricalSystems() {
 ```go
 // Use custom SimConnect DLL location
 sdk := client.NewWithCustomDLL("MyApp", "D:/CustomPath/SimConnect.dll")
+```
+
+### Event Value Monitoring
+
+Monitor events that carry meaningful data values for state changes and system information.
+
+```go
+func monitorEventValues() {
+    sdk := client.New("EventMonitor")
+    defer sdk.Close()
+    
+    if err := sdk.Open(); err != nil {
+        panic(err)
+    }
+
+    // Subscribe to events that carry meaningful data values
+    sdk.SubscribeToSystemEvent(1001, "FlightLoaded")
+    sdk.SubscribeToSystemEvent(1002, "FlightSaved") 
+    sdk.SubscribeToSystemEvent(1003, "PauseOn")
+    sdk.SubscribeToSystemEvent(1004, "PauseOff")
+    sdk.SubscribeToSystemEvent(1005, "Crashed")
+
+    for msg := range sdk.Listen() {
+        if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "EVENT" {
+            if eventData, exists := msgMap["event"]; exists {
+                if event, ok := eventData.(*types.EventData); ok {
+                    fmt.Printf("📡 Event: %s\n", event.EventName)
+                    fmt.Printf("   Type: %s\n", event.EventType)
+                    fmt.Printf("   Value: %d\n", event.EventData)
+                    fmt.Printf("   Group: %d, ID: %d\n", event.GroupID, event.EventID)
+                    
+                    // Process event values based on event type
+                    if event.EventData != 0 {
+                        fmt.Printf("   ⚡ Event carries data value: %d\n", event.EventData)
+                    }
+                    
+                    // Handle specific events with their values
+                    switch event.EventName {
+                    case "FlightLoaded":
+                        fmt.Printf("   ✈️ Flight loaded (File ID: %d)\n", event.EventData)
+                    case "PauseOn":
+                        fmt.Printf("   ⏸️ Simulation paused (Reason: %d)\n", event.EventData)
+                    case "Crashed":
+                        fmt.Printf("   💥 Aircraft crashed (Type: %d)\n", event.EventData)
+                    }
+                }
+            }
+        }
+    }
+}
 ```
 
 ## Performance Considerations

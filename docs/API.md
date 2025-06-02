@@ -192,7 +192,21 @@ Subscribes to system events from the simulator.
 
 **Example:**
 ```go
-err := sdk.SubscribeToSystemEvent(1010, "Pause")
+// Subscribe to events that may carry data values
+err := sdk.SubscribeToSystemEvent(1010, "Pause")        // May carry pause reason
+err := sdk.SubscribeToSystemEvent(1020, "AircraftLoaded") // May carry aircraft ID
+err := sdk.SubscribeToSystemEvent(1030, "Crashed")      // May carry crash type
+
+// Process events with their data values
+for msg := range sdk.Listen() {
+    if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "EVENT" {
+        if eventData, exists := msgMap["event"]; exists {
+            if event, ok := eventData.(*types.EventData); ok {
+                fmt.Printf("Event: %s, Value: %d\n", event.EventName, event.EventData)
+            }
+        }
+    }
+}
 ```
 
 ### `MapClientEventToSimEvent(eventID types.ClientEventID, eventName string) error`
@@ -260,10 +274,20 @@ Transmits a client event to the simulator.
 
 **Example:**
 ```go
+// Simple event transmission
 err := sdk.TransmitClientEvent(
     types.SIMCONNECT_OBJECT_ID_USER,
     10011511,
-    0,
+    0, // No data value
+    2000,
+    types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+)
+
+// Event with data value
+err := sdk.TransmitClientEvent(
+    types.SIMCONNECT_OBJECT_ID_USER,
+    EVENT_ID_SET_FREQUENCY,
+    123450, // Frequency value in Hz * 10
     2000,
     types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
 )
@@ -318,7 +342,17 @@ type SimVarData struct {
 type EventData struct {
     GroupID   uint32  // Notification group ID
     EventID   uint32  // Event identifier
-    EventData uint32  // Event data payload
+    EventData uint32  // Event data payload - contains the actual event value
+    EventType string  // "system" or "client"
+    EventName string  // Human-readable event name
+}
+```
+
+**Event Data Values:**
+- System events may carry state information (pause/unpause, crash types, etc.)
+- Client events can include custom data values (frequencies, settings, etc.)
+- Value of 0 typically indicates a simple trigger event with no additional data
+- Non-zero values contain meaningful state or parameter information
     EventType string  // "system" or "client"
     EventName string  // Human-readable event name
 }
