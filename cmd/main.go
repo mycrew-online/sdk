@@ -166,6 +166,33 @@ func main() {
 			fmt.Println("✅ RequestSimVarDataPeriodic (LATITUDE) succeeded! Data will arrive every second...")
 		}
 	}
+
+	// Baby Step 1: Test system event subscriptions
+	fmt.Println("🧪 Testing system event subscriptions...")
+	// Test 1: Subscribe to "Pause" system event (gets both pause and unpause notifications)
+	fmt.Println("🧪 Subscribing to 'Pause' system event...")
+	if err := sdk.SubscribeToSystemEvent(1010, "Pause"); err != nil {
+		fmt.Printf("❌ SubscribeToSystemEvent (Pause) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ SubscribeToSystemEvent (Pause) succeeded!")
+	}
+
+	// Test 2: Subscribe to "Sim" system event
+	fmt.Println("🧪 Subscribing to 'Sim' system event...")
+	if err := sdk.SubscribeToSystemEvent(1020, "Sim"); err != nil {
+		fmt.Printf("❌ SubscribeToSystemEvent (Sim) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ SubscribeToSystemEvent (Sim) succeeded!")
+	}
+
+	// Test 3: Subscribe to "AircraftLoaded" system event
+	fmt.Println("🧪 Subscribing to 'AircraftLoaded' system event...")
+	if err := sdk.SubscribeToSystemEvent(1030, "AircraftLoaded"); err != nil {
+		fmt.Printf("❌ SubscribeToSystemEvent (AircraftLoaded) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ SubscribeToSystemEvent (AircraftLoaded) succeeded!")
+	}
+
 	// Start listening for messages
 	messages := sdk.Listen()
 	if messages == nil {
@@ -174,6 +201,7 @@ func main() {
 	}
 	fmt.Println("👂 Listening for messages for 8 seconds...")
 	fmt.Println("   📊 Expect to see periodic data for AIRSPEED (every frame) and LATITUDE (every second)")
+	fmt.Println("   📡 Also watching for system events: Pause, Sim, AircraftLoaded")
 	fmt.Println("   🛑 Will stop periodic requests after 3 seconds...")
 
 	// Listen for messages with a timeout and periodic stop demonstration
@@ -249,6 +277,43 @@ func main() {
 
 					case "OPEN":
 						fmt.Printf("   🔓 SimConnect connection opened successfully\n")
+
+					case "EVENT":
+						// Check if we have pre-parsed event data available
+						if eventData, exists := msgMap["event"]; exists {
+							fmt.Printf("   📡 EVENT DATA AVAILABLE: %+v (type: %T)\n", eventData, eventData)
+
+							// Try to cast to EventData
+							if parsedEvent, ok := eventData.(*types.EventData); ok {
+								fmt.Printf("   🎯 EVENT: ID=%d, Group=%d, Data=%d, Type=%s, Name=%s\n",
+									parsedEvent.EventID, parsedEvent.GroupID, parsedEvent.EventData,
+									parsedEvent.EventType, parsedEvent.EventName)
+
+								// Special handling for known events
+								switch parsedEvent.EventID {
+								case 1010: // Pause event (both pause and unpause notifications)
+									if parsedEvent.EventData == 1 {
+										fmt.Printf("   ⏸️  Simulator PAUSED\n")
+									} else {
+										fmt.Printf("   ▶️  Simulator RESUMED\n")
+									}
+								case 1020: // Sim event
+									if parsedEvent.EventData == 1 {
+										fmt.Printf("   🚁 Simulator RUNNING\n")
+									} else {
+										fmt.Printf("   🛑 Simulator STOPPED\n")
+									}
+								case 1030: // AircraftLoaded event
+									fmt.Printf("   ✈️  Aircraft LOADED (Data: %d)\n", parsedEvent.EventData)
+								default:
+									fmt.Printf("   🎪 Unknown Event ID: %d\n", parsedEvent.EventID)
+								}
+							} else {
+								fmt.Printf("   ⚠️  Could not cast event data to EventData, got type: %T\n", eventData)
+							}
+						} else {
+							fmt.Printf("   ⚠️  No event field found in EVENT message\n")
+						}
 
 					case "QUIT":
 						fmt.Printf("   👋 SimConnect connection closed\n")

@@ -208,9 +208,14 @@ func parseSimConnectData(ppData uintptr, pcbData uint32, engine *Engine) {
 		}
 	case types.SIMCONNECT_RECV_ID_SYSTEM_STATE:
 		// fmt.Println("🔧 SYSTEM_STATE received")
-
 	case types.SIMCONNECT_RECV_ID_EVENT:
 		// fmt.Println("📡 EVENT received")
+		if eventData := parseEventData(ppData, pcbData, engine); eventData != nil {
+			// Log event reception for debugging
+			// fmt.Printf("   🎯 Event ID: %d, Group: %d, Data: %d, Type: %s\n",
+			//	eventData.EventID, eventData.GroupID, eventData.EventData, eventData.EventType)
+			_ = eventData // Suppress unused variable warning
+		}
 
 	case types.SIMCONNECT_RECV_ID_ENUMERATE_INPUT_EVENTS:
 		// fmt.Println("🎮 ENUMERATE_INPUT_EVENTS received")
@@ -275,6 +280,13 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 		}
 	}
 
+	// For EVENT, add the parsed event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT {
+		if eventData := parseEventData(ppData, pcbData, engine); eventData != nil {
+			msg["event"] = eventData
+		}
+	}
+
 	return msg
 }
 
@@ -302,4 +314,59 @@ func getMessageTypeName(id types.SimConnectRecvID) string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+// parseEventData extracts event data from SIMCONNECT_RECV_EVENT message
+func parseEventData(ppData uintptr, pcbData uint32, engine *Engine) *types.EventData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_EVENT structure
+	eventData := (*types.SIMCONNECT_RECV_EVENT)(unsafe.Pointer(ppData))
+	if eventData.DwID != types.SIMCONNECT_RECV_ID_EVENT {
+		return nil
+	}
+
+	// Create event data structure for channel message
+	result := &types.EventData{
+		GroupID:   eventData.DwGroupID,
+		EventID:   eventData.DwEventID,
+		EventData: eventData.DwData,
+		EventType: "unknown", // Default type
+	} // TODO: Add event name lookup when event registry is implemented
+	// For now, we'll use the event ID and assume they're system events
+	// since we're starting with system event subscriptions
+	result.EventType = "system"
+
+	return result
+}
+
+// isSystemEvent determines if an event name represents a system event
+// System events are predefined events from the simulator
+func isSystemEvent(eventName string) bool {
+	systemEvents := map[string]bool{
+		"Paused":                true,
+		"Unpaused":              true,
+		"Sim":                   true,
+		"SimStart":              true,
+		"SimStop":               true,
+		"AircraftLoaded":        true,
+		"FlightLoaded":          true,
+		"FlightSaved":           true,
+		"FlightPlanActivated":   true,
+		"FlightPlanDeactivated": true,
+		"PositionChanged":       true,
+		"CrashReset":            true,
+		"Crashed":               true,
+		"CustomMission":         true,
+		"MissionCompleted":      true,
+		"WeatherModeChanged":    true,
+		"View":                  true,
+		"Sound":                 true,
+		"ObjectAdded":           true,
+		"ObjectRemoved":         true,
+		// Add more system events as needed
+	}
+	return systemEvents[eventName]
 }

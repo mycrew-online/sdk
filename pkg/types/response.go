@@ -38,6 +38,23 @@ type ExceptionData struct {
 	Severity      string              `json:"severity"`       // "warning", "error", "critical"
 }
 
+// SIMCONNECT_RECV_EVENT represents event information received from SimConnect
+type SIMCONNECT_RECV_EVENT struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwGroupID       uint32 // ID of the client defined group
+	DwEventID       uint32 // ID of the client defined event
+	DwData          uint32 // Event data (varies by event type)
+}
+
+// EventData represents a parsed SimConnect event for channel messages
+type EventData struct {
+	GroupID   uint32 `json:"group_id"`   // ID of the group the event belongs to
+	EventID   uint32 `json:"event_id"`   // ID of the event
+	EventData uint32 `json:"event_data"` // Event-specific data value
+	EventName string `json:"event_name"` // Human-readable event name (if available)
+	EventType string `json:"event_type"` // Type of event: "system", "client", or "unknown"
+}
+
 type SimConnectRecvID uint32
 
 // SIMCONNECT_RECV_ID defines all possible message types that can be received from SimConnect

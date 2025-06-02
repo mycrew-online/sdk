@@ -17,6 +17,7 @@ type Connection interface {
 	RequestSimVarDataPeriodic(defID uint32, requestID uint32, period types.SimConnectPeriod) error
 	StopPeriodicRequest(requestID uint32) error
 	SetSimVar(defID uint32, value interface{}) error
+	SubscribeToSystemEvent(eventID uint32, eventName string) error
 }
 
 func (e *Engine) Open() error {
