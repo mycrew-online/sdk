@@ -10,7 +10,7 @@ This document describes the periodic data request functionality added to the Sim
 #### `RequestSimVarDataPeriodic(defID, requestID, period)`
 - **Purpose**: Request continuous data updates for a previously registered SimVar
 - **Parameters**:
-  - `defID`: Data definition ID (must be registered with `AddSimVar` first)
+  - `defID`: Data definition ID (must be registered with `RegisterSimVarDefinition` first)
   - `requestID`: Unique identifier for this periodic request
   - `period`: Update frequency using `types.SimConnectPeriod` constants
 - **Returns**: Error if the request fails
@@ -57,7 +57,7 @@ type Connection interface {
 ### Basic Periodic Data Request
 ```go
 // 1. Register a SimVar first
-err := sdk.AddSimVar(1, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32)
+err := sdk.RegisterSimVarDefinition(1, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32)
 
 // 2. Start periodic updates every second
 err = sdk.RequestSimVarDataPeriodic(1, 100, types.SIMCONNECT_PERIOD_SECOND)
@@ -77,14 +77,14 @@ err = sdk.StopPeriodicRequest(100)
 ### High-Frequency Data (Visual Frame Rate)
 ```go
 // For high-frequency data like flight controls or instruments
-err := sdk.AddSimVar(2, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32)
+err := sdk.RegisterSimVarDefinition(2, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32)
 err = sdk.RequestSimVarDataPeriodic(2, 200, types.SIMCONNECT_PERIOD_VISUAL_FRAME)
 ```
 
 ### Event-Driven Data
 ```go
 // For data that only changes when user interacts with controls
-err := sdk.AddSimVar(3, "CAMERA STATE", "Enum", types.SIMCONNECT_DATATYPE_INT32)
+err := sdk.RegisterSimVarDefinition(3, "CAMERA STATE", "Enum", types.SIMCONNECT_DATATYPE_INT32)
 err = sdk.RequestSimVarDataPeriodic(3, 300, types.SIMCONNECT_PERIOD_ON_SET)
 ```
 

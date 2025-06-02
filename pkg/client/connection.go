@@ -12,12 +12,17 @@ type Connection interface {
 	Open() error
 	Close() error
 	Listen() <-chan any
-	AddSimVar(defID uint32, varName string, units string, dataType types.SimConnectDataType) error
+	RegisterSimVarDefinition(defID uint32, varName string, units string, dataType types.SimConnectDataType) error
 	RequestSimVarData(defID uint32, requestID uint32) error
 	RequestSimVarDataPeriodic(defID uint32, requestID uint32, period types.SimConnectPeriod) error
 	StopPeriodicRequest(requestID uint32) error
 	SetSimVar(defID uint32, value interface{}) error
 	SubscribeToSystemEvent(eventID uint32, eventName string) error
+	// Client Event Management
+	MapClientEventToSimEvent(eventID types.ClientEventID, eventName string) error
+	AddClientEventToNotificationGroup(groupID types.NotificationGroupID, eventID types.ClientEventID, maskable bool) error
+	SetNotificationGroupPriority(groupID types.NotificationGroupID, priority uint32) error
+	TransmitClientEvent(objectID uint32, eventID types.ClientEventID, data uint32, groupID types.NotificationGroupID, flags uint32) error
 }
 
 func (e *Engine) Open() error {

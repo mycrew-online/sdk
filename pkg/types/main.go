@@ -48,3 +48,26 @@ const (
 const (
 	SIMCONNECT_DATA_SET_FLAG_DEFAULT uint32 = 0 // Default set flags
 )
+
+// SIMCONNECT_NOTIFICATION_GROUP_ID defines notification group priorities
+const (
+	SIMCONNECT_GROUP_PRIORITY_HIGHEST          uint32 = 1
+	SIMCONNECT_GROUP_PRIORITY_HIGHEST_MASKABLE uint32 = 10000000
+	SIMCONNECT_GROUP_PRIORITY_STANDARD         uint32 = 1900000000
+	SIMCONNECT_GROUP_PRIORITY_DEFAULT          uint32 = 2000000000
+	SIMCONNECT_GROUP_PRIORITY_LOWEST           uint32 = 4000000000
+)
+
+// SIMCONNECT_EVENT_FLAG defines event transmission flags
+const (
+	SIMCONNECT_EVENT_FLAG_DEFAULT             uint32 = 0
+	SIMCONNECT_EVENT_FLAG_FAST_REPEAT_TIMER   uint32 = 1
+	SIMCONNECT_EVENT_FLAG_SLOW_REPEAT_TIMER   uint32 = 2
+	SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY uint32 = 4
+)
+
+// ClientEventID type for client-defined event identifiers
+type ClientEventID uint32
+
+// NotificationGroupID type for notification group identifiers
+type NotificationGroupID uint32

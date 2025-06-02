@@ -8,9 +8,9 @@ import (
 	"github.com/mycrew-online/sdk/pkg/types"
 )
 
-// AddSimVar adds a single simulation variable to a data definition with specified data type
+// RegisterSimVarDefinition registers a single simulation variable to a data definition with specified data type
 // This enhanced version tracks the data type for proper parsing later
-func (e *Engine) AddSimVar(defID uint32, varName string, units string, dataType types.SimConnectDataType) error {
+func (e *Engine) RegisterSimVarDefinition(defID uint32, varName string, units string, dataType types.SimConnectDataType) error {
 	// Thread-safe check for connection
 	e.system.mu.RLock()
 	isConnected := e.system.IsConnected
@@ -184,7 +184,7 @@ func (e *Engine) SetSimVar(defID uint32, value interface{}) error {
 	e.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("defID %d not found in data type registry - call AddSimVar first", defID)
+		return fmt.Errorf("defID %d not found in data type registry - call RegisterSimVarDefinition first", defID)
 	}
 
 	// Convert the value to the proper binary format based on data type

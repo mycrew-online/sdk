@@ -29,13 +29,12 @@ func main() {
 		fmt.Println("✅ Testing shutdown without connection...")
 		return
 	}
-
-	fmt.Println("✅ Connected successfully!") // Test 1: Add a simple sim variable
-	fmt.Println("🧪 Testing AddSimVar...")
-	if err := sdk.AddSimVar(1, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
-		fmt.Printf("❌ AddSimVar failed: %v\n", err)
+	fmt.Println("✅ Connected successfully!") // Test 1: Register a simple sim variable definition
+	fmt.Println("🧪 Testing RegisterSimVarDefinition...")
+	if err := sdk.RegisterSimVarDefinition(1, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar succeeded - variable registered!")
+		fmt.Println("✅ RegisterSimVarDefinition succeeded - variable registered!")
 
 		// Test 2: Request data for the registered variable
 		fmt.Println("🧪 Testing RequestSimVarData...")
@@ -45,13 +44,12 @@ func main() {
 			fmt.Println("✅ RequestSimVarData succeeded - data requested!")
 		}
 	}
-
 	// Test 3: Add a second sim variable (different data type)
-	fmt.Println("🧪 Testing AddSimVar for CAMERA STATE...")
-	if err := sdk.AddSimVar(2, "CAMERA STATE", "Enum", types.SIMCONNECT_DATATYPE_INT32); err != nil {
-		fmt.Printf("❌ AddSimVar (camera) failed: %v\n", err)
+	fmt.Println("🧪 Testing RegisterSimVarDefinition for CAMERA STATE...")
+	if err := sdk.RegisterSimVarDefinition(2, "CAMERA STATE", "Enum", types.SIMCONNECT_DATATYPE_INT32); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (camera) failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (camera) succeeded!")
+		fmt.Println("✅ RegisterSimVarDefinition (camera) succeeded!")
 		// Request camera data
 		fmt.Println("🧪 Testing RequestSimVarData for camera...")
 		if err := sdk.RequestSimVarData(2, 200); err != nil {
@@ -61,7 +59,7 @@ func main() {
 		}
 		// Test 3B: SetSimVar with CAMERA STATE (Baby Step 3B) - Cycle through different camera states
 		fmt.Println("🧪 Testing SetSimVar for CAMERA STATE - cycling through values...")
-		cameraStates := []int32{2, 3, 4, 5, 6}
+		cameraStates := []int32{2, 3, 4, 5, 6, 2}
 
 		for i, cameraState := range cameraStates {
 			fmt.Printf("🎥 Setting camera state to %d (test %d/5)...\n", cameraState, i+1)
@@ -90,11 +88,11 @@ func main() {
 			}
 		}
 	} // Test 4: Add a string variable (ATC TYPE) with STRINGV and empty units
-	fmt.Println("🧪 Testing AddSimVar for ATC TYPE...")
-	if err := sdk.AddSimVar(3, "ATC TYPE", "", types.SIMCONNECT_DATATYPE_STRINGV); err != nil {
-		fmt.Printf("❌ AddSimVar (ATC TYPE) failed: %v\n", err)
+	fmt.Println("🧪 Testing RegisterSimVarDefinition for ATC TYPE...")
+	if err := sdk.RegisterSimVarDefinition(3, "ATC TYPE", "", types.SIMCONNECT_DATATYPE_STRINGV); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (ATC TYPE) failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (ATC TYPE) succeeded!")
+		fmt.Println("✅ RegisterSimVarDefinition (ATC TYPE) succeeded!")
 
 		// Request ATC TYPE data
 		fmt.Println("🧪 Testing RequestSimVarData for ATC TYPE...")
@@ -104,13 +102,12 @@ func main() {
 			fmt.Println("✅ RequestSimVarData (ATC TYPE) succeeded!")
 		}
 	}
-
 	// Test 5: Add TITLE variable with proper empty units
-	fmt.Println("🧪 Testing AddSimVar for TITLE...")
-	if err := sdk.AddSimVar(4, "TITLE", "", types.SIMCONNECT_DATATYPE_STRINGV); err != nil {
-		fmt.Printf("❌ AddSimVar (TITLE) failed: %v\n", err)
+	fmt.Println("🧪 Testing RegisterSimVarDefinition for TITLE...")
+	if err := sdk.RegisterSimVarDefinition(4, "TITLE", "", types.SIMCONNECT_DATATYPE_STRINGV); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (TITLE) failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (TITLE) succeeded!")
+		fmt.Println("✅ RegisterSimVarDefinition (TITLE) succeeded!")
 
 		// Request TITLE data
 		fmt.Println("🧪 Testing RequestSimVarData for TITLE...")
@@ -119,13 +116,12 @@ func main() {
 		} else {
 			fmt.Println("✅ RequestSimVarData (TITLE) succeeded!")
 		}
-	}
-	// Test exception handling by trying to use an invalid SimVar
+	} // Test exception handling by trying to use an invalid SimVar
 	fmt.Println("🧪 Testing exception handling with invalid SimVar...")
-	if err := sdk.AddSimVar(999, "INVALID_VAR_NAME", "invalid_unit", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
-		fmt.Printf("❌ AddSimVar (invalid) failed as expected: %v\n", err)
+	if err := sdk.RegisterSimVarDefinition(999, "INVALID_VAR_NAME", "invalid_unit", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (invalid) failed as expected: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (invalid) succeeded - will request to potentially trigger exception...")
+		fmt.Println("✅ RegisterSimVarDefinition (invalid) succeeded - will request to potentially trigger exception...")
 		// Try to request data for the invalid variable - this should cause an exception
 		if err := sdk.RequestSimVarData(999, 999); err != nil {
 			fmt.Printf("❌ RequestSimVarData (invalid) failed: %v\n", err)
@@ -134,14 +130,51 @@ func main() {
 		}
 	}
 
-	// Test 6: Periodic data requests
-	fmt.Println("🧪 Testing periodic data requests...")
-	// Add a variable specifically for periodic testing
+	// Test 6: Add electrical system data monitoring (matching the GitHub example)
+	fmt.Println("🧪 Testing electrical system data monitoring...")
+	// Add electrical system variables (matching the GitHub example structure)
+	electricalVars := []struct {
+		defineID uint32
+		name     string
+		units    string
+		dataType types.SimConnectDataType
+	}{
+		{7, "EXTERNAL POWER AVAILABLE", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{8, "EXTERNAL POWER ON", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{9, "ELECTRICAL MASTER BATTERY", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{10, "GENERAL ENG MASTER ALTERNATOR", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{11, "LIGHT BEACON", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{12, "LIGHT NAV", "Bool", types.SIMCONNECT_DATATYPE_INT32},
+		{13, "ELECTRICAL MAIN BUS VOLTAGE", "Volts", types.SIMCONNECT_DATATYPE_FLOAT32},
+		{14, "ELECTRICAL BATTERY LOAD", "Amperes", types.SIMCONNECT_DATATYPE_FLOAT32},
+	}
+
+	// Register all electrical variables
+	for _, v := range electricalVars {
+		fmt.Printf("🧪 Adding %s to electrical monitoring...\n", v.name)
+		if err := sdk.RegisterSimVarDefinition(v.defineID, v.name, v.units, v.dataType); err != nil {
+			fmt.Printf("❌ RegisterSimVarDefinition (%s) failed: %v\n", v.name, err)
+		} else {
+			fmt.Printf("✅ RegisterSimVarDefinition (%s) succeeded!\n", v.name)
+
+			// Start periodic monitoring for each electrical variable (every second)
+			requestID := 700 + v.defineID
+			fmt.Printf("🧪 Starting periodic monitoring for %s (every second)...\n", v.name)
+			if err := sdk.RequestSimVarDataPeriodic(v.defineID, requestID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+				fmt.Printf("❌ RequestSimVarDataPeriodic (%s) failed: %v\n", v.name, err)
+			} else {
+				fmt.Printf("✅ RequestSimVarDataPeriodic (%s) succeeded! Monitoring electrical data...\n", v.name)
+			}
+		}
+	}
+
+	// Test 7: Periodic data requests
+	fmt.Println("🧪 Testing periodic data requests...") // Add a variable specifically for periodic testing
 	fmt.Println("🧪 Adding AIRSPEED INDICATED for periodic testing...")
-	if err := sdk.AddSimVar(5, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
-		fmt.Printf("❌ AddSimVar (AIRSPEED) failed: %v\n", err)
+	if err := sdk.RegisterSimVarDefinition(5, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (AIRSPEED) failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (AIRSPEED) succeeded!")
+		fmt.Println("✅ RegisterSimVarDefinition (AIRSPEED) succeeded!")
 
 		// Start periodic request every visual frame
 		fmt.Println("🧪 Starting periodic request for AIRSPEED (every visual frame)...")
@@ -150,13 +183,12 @@ func main() {
 		} else {
 			fmt.Println("✅ RequestSimVarDataPeriodic (AIRSPEED) succeeded! Data will flow continuously...")
 		}
-	}
-	// Add another variable for periodic testing with different frequency
+	} // Add another variable for periodic testing with different frequency
 	fmt.Println("🧪 Adding PLANE LATITUDE for periodic testing...")
-	if err := sdk.AddSimVar(6, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
-		fmt.Printf("❌ AddSimVar (LATITUDE) failed: %v\n", err)
+	if err := sdk.RegisterSimVarDefinition(6, "PLANE LATITUDE", "radians", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ RegisterSimVarDefinition (LATITUDE) failed: %v\n", err)
 	} else {
-		fmt.Println("✅ AddSimVar (LATITUDE) succeeded!")
+		fmt.Println("✅ RegisterSimVarDefinition (LATITUDE) succeeded!")
 
 		// Start periodic request every second
 		fmt.Println("🧪 Starting periodic request for LATITUDE (every second)...")
@@ -192,6 +224,67 @@ func main() {
 	} else {
 		fmt.Println("✅ SubscribeToSystemEvent (AircraftLoaded) succeeded!")
 	}
+	// ===== ELECTRICAL SYSTEM EVENT TESTS =====
+	fmt.Println("\n🔌 === ELECTRICAL SYSTEM EVENT TESTING ===")
+
+	// Electrical event constants (from the GitHub example)
+	const (
+		EVENT_ID_TOGGLE_EXTERNAL_POWER = 10011511
+		EVENT_ID_TOGGLE_MASTER_BATTERY = 10025115
+		EVENT_ID_TOGGLE_MASTER_ALT     = 10031515
+		EVENT_ID_TOGGLE_BEACON_LIGHTS  = 10041515
+		EVENT_ID_TOGGLE_NAV_LIGHTS     = 10051514
+	)
+
+	// Test 1: Map electrical events to sim events
+	fmt.Println("🧪 Testing MapClientEventToSimEvent for TOGGLE_EXTERNAL_POWER...")
+	if err := sdk.MapClientEventToSimEvent(EVENT_ID_TOGGLE_EXTERNAL_POWER, "TOGGLE_EXTERNAL_POWER"); err != nil {
+		fmt.Printf("❌ MapClientEventToSimEvent (TOGGLE_EXTERNAL_POWER) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ MapClientEventToSimEvent (TOGGLE_EXTERNAL_POWER) succeeded!")
+	}
+
+	fmt.Println("🧪 Testing MapClientEventToSimEvent for TOGGLE_MASTER_BATTERY...")
+	if err := sdk.MapClientEventToSimEvent(EVENT_ID_TOGGLE_MASTER_BATTERY, "TOGGLE_MASTER_BATTERY"); err != nil {
+		fmt.Printf("❌ MapClientEventToSimEvent (TOGGLE_MASTER_BATTERY) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ MapClientEventToSimEvent (TOGGLE_MASTER_BATTERY) succeeded!")
+	}
+
+	fmt.Println("🧪 Testing MapClientEventToSimEvent for TOGGLE_BEACON_LIGHTS...")
+	if err := sdk.MapClientEventToSimEvent(EVENT_ID_TOGGLE_BEACON_LIGHTS, "TOGGLE_BEACON_LIGHTS"); err != nil {
+		fmt.Printf("❌ MapClientEventToSimEvent (TOGGLE_BEACON_LIGHTS) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ MapClientEventToSimEvent (TOGGLE_BEACON_LIGHTS) succeeded!")
+	}
+
+	// Test 2: Create electrical notification group and set priority
+	fmt.Println("🧪 Testing SetNotificationGroupPriority for electrical events...")
+	if err := sdk.SetNotificationGroupPriority(2000, types.SIMCONNECT_GROUP_PRIORITY_HIGHEST); err != nil {
+		fmt.Printf("❌ SetNotificationGroupPriority failed: %v\n", err)
+	} else {
+		fmt.Println("✅ SetNotificationGroupPriority succeeded!")
+	}
+
+	// Test 3: Add electrical events to notification group
+	fmt.Println("🧪 Testing AddClientEventToNotificationGroup for electrical events...")
+	if err := sdk.AddClientEventToNotificationGroup(2000, EVENT_ID_TOGGLE_EXTERNAL_POWER, false); err != nil {
+		fmt.Printf("❌ AddClientEventToNotificationGroup (TOGGLE_EXTERNAL_POWER) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ AddClientEventToNotificationGroup (TOGGLE_EXTERNAL_POWER) succeeded!")
+	}
+
+	if err := sdk.AddClientEventToNotificationGroup(2000, EVENT_ID_TOGGLE_MASTER_BATTERY, false); err != nil {
+		fmt.Printf("❌ AddClientEventToNotificationGroup (TOGGLE_MASTER_BATTERY) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ AddClientEventToNotificationGroup (TOGGLE_MASTER_BATTERY) succeeded!")
+	}
+
+	if err := sdk.AddClientEventToNotificationGroup(2000, EVENT_ID_TOGGLE_BEACON_LIGHTS, false); err != nil {
+		fmt.Printf("❌ AddClientEventToNotificationGroup (TOGGLE_BEACON_LIGHTS) failed: %v\n", err)
+	} else {
+		fmt.Println("✅ AddClientEventToNotificationGroup (TOGGLE_BEACON_LIGHTS) succeeded!")
+	}
 
 	// Start listening for messages
 	messages := sdk.Listen()
@@ -220,9 +313,7 @@ func main() {
 					fmt.Printf("❌ Failed to stop AIRSPEED periodic request: %v\n", err)
 				} else {
 					fmt.Println("✅ AIRSPEED periodic request stopped")
-				}
-
-				// Stop the latitude periodic request
+				} // Stop the latitude periodic request
 				if err := sdk.StopPeriodicRequest(600); err != nil {
 					fmt.Printf("❌ Failed to stop LATITUDE periodic request: %v\n", err)
 				} else {
@@ -230,7 +321,32 @@ func main() {
 				}
 
 				periodicStopped = true
-				fmt.Println("📊 Continuing to listen for remaining 5 seconds (should see fewer messages now)...")
+				fmt.Println("📊 Continuing to listen for remaining 5 seconds (should see fewer messages now)...") // Test electrical event transmission while listening
+				fmt.Println("\n⚡ Testing electrical event transmission...")
+				fmt.Println("🔌 Triggering TOGGLE_EXTERNAL_POWER...")
+				if err := sdk.TransmitClientEvent(types.SIMCONNECT_OBJECT_ID_USER, EVENT_ID_TOGGLE_EXTERNAL_POWER, 0, 2000, types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY); err != nil {
+					fmt.Printf("❌ TransmitClientEvent (TOGGLE_EXTERNAL_POWER) failed: %v\n", err)
+				} else {
+					fmt.Println("✅ TransmitClientEvent (TOGGLE_EXTERNAL_POWER) succeeded! External power should toggle!")
+				}
+
+				// Wait a moment, then test master battery toggle
+				time.Sleep(1 * time.Second)
+				fmt.Println("🔋 Triggering TOGGLE_MASTER_BATTERY...")
+				if err := sdk.TransmitClientEvent(types.SIMCONNECT_OBJECT_ID_USER, EVENT_ID_TOGGLE_MASTER_BATTERY, 0, 2000, types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY); err != nil {
+					fmt.Printf("❌ TransmitClientEvent (TOGGLE_MASTER_BATTERY) failed: %v\n", err)
+				} else {
+					fmt.Println("✅ TransmitClientEvent (TOGGLE_MASTER_BATTERY) succeeded! Master battery should toggle!")
+				}
+
+				// Wait a moment, then test beacon lights
+				time.Sleep(1 * time.Second)
+				fmt.Println("🚨 Triggering TOGGLE_BEACON_LIGHTS...")
+				if err := sdk.TransmitClientEvent(types.SIMCONNECT_OBJECT_ID_USER, EVENT_ID_TOGGLE_BEACON_LIGHTS, 0, 2000, types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY); err != nil {
+					fmt.Printf("❌ TransmitClientEvent (TOGGLE_BEACON_LIGHTS) failed: %v\n", err)
+				} else {
+					fmt.Println("✅ TransmitClientEvent (TOGGLE_BEACON_LIGHTS) succeeded! Beacon lights should toggle!")
+				}
 			}
 		case msg := <-messages:
 			if msg != nil {
