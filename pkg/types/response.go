@@ -28,6 +28,16 @@ type SIMCONNECT_RECV_EXCEPTION struct {
 	DwIndex         uint32 // Index number for some exceptions
 }
 
+// ExceptionData represents a parsed SimConnect exception for channel messages
+type ExceptionData struct {
+	ExceptionCode SimConnectException `json:"exception_code"` // Numeric exception code
+	ExceptionName string              `json:"exception_name"` // Human-readable exception name
+	Description   string              `json:"description"`    // Detailed description of the exception
+	SendID        uint32              `json:"send_id"`        // ID of the packet that caused the exception
+	Index         uint32              `json:"index"`          // Index number for some exceptions
+	Severity      string              `json:"severity"`       // "warning", "error", "critical"
+}
+
 type SimConnectRecvID uint32
 
 // SIMCONNECT_RECV_ID defines all possible message types that can be received from SimConnect

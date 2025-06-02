@@ -121,6 +121,20 @@ func main() {
 		}
 	}
 
+	// Test exception handling by trying to use an invalid SimVar
+	fmt.Println("🧪 Testing exception handling with invalid SimVar...")
+	if err := sdk.AddSimVar(999, "INVALID_VAR_NAME", "invalid_unit", types.SIMCONNECT_DATATYPE_FLOAT32); err != nil {
+		fmt.Printf("❌ AddSimVar (invalid) failed as expected: %v\n", err)
+	} else {
+		fmt.Println("✅ AddSimVar (invalid) succeeded - will request to potentially trigger exception...")
+		// Try to request data for the invalid variable - this should cause an exception
+		if err := sdk.RequestSimVarData(999, 999); err != nil {
+			fmt.Printf("❌ RequestSimVarData (invalid) failed: %v\n", err)
+		} else {
+			fmt.Println("✅ RequestSimVarData (invalid) submitted - watch for exceptions...")
+		}
+	}
+
 	// Start listening for messages
 	messages := sdk.Listen()
 	if messages == nil {
@@ -138,11 +152,32 @@ func main() {
 		case msg := <-messages:
 			if msg != nil {
 				messageCount++
+
+				// Check for exceptions first using the utility function
+				if exception, isExceptionMsg := types.IsException(msg); isExceptionMsg {
+					fmt.Printf("📨 Message %d: ❌ EXCEPTION - %s\n", messageCount, exception.ExceptionName)
+					fmt.Printf("   🔍 Details: %s\n", exception.Description)
+					fmt.Printf("   🎯 SendID: %d, Index: %d, Severity: %s\n",
+						exception.SendID, exception.Index, exception.Severity)
+
+					// Check severity and take appropriate action
+					if types.IsCriticalException(exception) {
+						fmt.Printf("   🚨 CRITICAL EXCEPTION! This may require immediate attention.\n")
+					} else if types.IsErrorException(exception) {
+						fmt.Printf("   ⚠️  ERROR EXCEPTION! Check your request parameters.\n")
+					} else if types.IsWarningException(exception) {
+						fmt.Printf("   ℹ️  WARNING EXCEPTION: Non-critical issue.\n")
+					}
+					continue
+				}
+
 				if msgMap, ok := msg.(map[string]any); ok {
 					fmt.Printf("📨 Message %d: Type=%v, ID=%v\n",
 						messageCount, msgMap["type"], msgMap["id"])
-					// If this is SIMOBJECT_DATA, check for parsed data
-					if msgMap["type"] == "SIMOBJECT_DATA" {
+
+					// Handle different message types
+					switch msgMap["type"] {
+					case "SIMOBJECT_DATA":
 						// Check if we have pre-parsed data available
 						if parsedData, exists := msgMap["parsed_data"]; exists {
 							// Try to cast to SimVarData (we need to import the client package for this)
@@ -159,7 +194,14 @@ func main() {
 							fmt.Printf("   ⚠️  No parsed_data field found in SIMOBJECT_DATA message\n")
 						}
 
-						// Show what we have access to
+					case "OPEN":
+						fmt.Printf("   🔓 SimConnect connection opened successfully\n")
+
+					case "QUIT":
+						fmt.Printf("   👋 SimConnect connection closed\n")
+
+					default:
+						// Show what we have access to for other message types
 						fmt.Printf("   📋 Available message fields: %v\n", getMapKeys(msgMap))
 					}
 				}

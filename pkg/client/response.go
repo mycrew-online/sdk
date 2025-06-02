@@ -254,6 +254,26 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 			msg["parsed_data"] = simVarData
 		}
 	}
+	// For EXCEPTION, add the parsed exception data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EXCEPTION {
+		if pcbData >= uint32(unsafe.Sizeof(types.SIMCONNECT_RECV_EXCEPTION{})) {
+			exceptionData := (*types.SIMCONNECT_RECV_EXCEPTION)(unsafe.Pointer(ppData))
+
+			// Convert to SimConnectException type
+			exceptionCode := types.SimConnectException(exceptionData.DwException)
+			// Create structured exception data using our helper functions
+			exceptionInfo := &types.ExceptionData{
+				ExceptionCode: exceptionCode,
+				ExceptionName: types.GetExceptionName(exceptionCode),
+				Description:   types.GetExceptionDescription(exceptionCode),
+				SendID:        exceptionData.DwSendID,
+				Index:         exceptionData.DwIndex,
+				Severity:      types.GetExceptionSeverity(exceptionCode),
+			}
+
+			msg["exception"] = exceptionInfo
+		}
+	}
 
 	return msg
 }
