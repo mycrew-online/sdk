@@ -21,10 +21,14 @@ function showTab(tabName) {
 async function updateMonitorData() {
     try {
         const response = await fetch('/api/monitor');
-        const data = await response.json();
-          // Update Core Environmental Data (Row 1)
+        const data = await response.json();        // Update Core Environmental Data (Row 1)
         document.getElementById('temperature').textContent = data.temperature.toFixed(1);
         document.getElementById('pressure').textContent = data.pressure.toFixed(2);
+        
+        // Update pressure in hPa (1 inHg = 33.8639 hPa)
+        const pressureHpa = (data.pressure || 0) * 33.8639;
+        document.getElementById('pressureHpa').textContent = pressureHpa.toFixed(1);
+        
         document.getElementById('windSpeed').textContent = data.windSpeed.toFixed(1);
         document.getElementById('windDirection').textContent = Math.round(data.windDirection);
         
@@ -35,7 +39,15 @@ async function updateMonitorData() {
         document.getElementById('simulationRate').textContent = data.simulationRate || '--';
         
         // Update Environmental Conditions (Row 2)
-        document.getElementById('visibility').textContent = Math.round(data.visibility || 0);
+        // Format visibility: show in km with 1 decimal if > 1000m, otherwise show in meters
+        const visibility = data.visibility || 0;
+        if (visibility > 1000) {
+            document.getElementById('visibility').textContent = (visibility / 1000).toFixed(1);
+            document.getElementById('visibilityUnit').textContent = 'km';
+        } else {
+            document.getElementById('visibility').textContent = Math.round(visibility);
+            document.getElementById('visibilityUnit').textContent = 'm';
+        }
         
         // Update precipitation with type and rate
         const precipState = data.precipState || 2;
