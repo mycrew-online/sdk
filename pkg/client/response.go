@@ -15,7 +15,7 @@ type SimVarData struct {
 
 // parseSimObjectData extracts sim variable data from SIMOBJECT_DATA message
 // Now type-aware - looks up the expected data type for proper parsing
-func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarData {
+func (e *Engine) parseSimObjectData(ppData uintptr, pcbData uint32) *SimVarData {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
@@ -27,9 +27,9 @@ func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarD
 	}
 
 	// Look up the expected data type for this DefineID (thread-safe)
-	engine.mu.RLock()
-	dataType, exists := engine.dataTypeRegistry[simObjData.DwDefineID]
-	engine.mu.RUnlock()
+	e.mu.RLock()
+	dataType, exists := e.dataTypeRegistry[simObjData.DwDefineID]
+	e.mu.RUnlock()
 	if !exists {
 		// Fallback to FLOAT32 if not found
 		dataType = types.SIMCONNECT_DATATYPE_FLOAT32
@@ -232,7 +232,7 @@ func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarD
 }*/
 
 // parseSimConnectToChannelMessage converts SimConnect data to a channel message
-func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Engine) any {
+func (e *Engine) parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32) any {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
@@ -255,7 +255,7 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 
 	// For SIMOBJECT_DATA, add the parsed values directly
 	if recv.DwID == types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA {
-		if simVarData := parseSimObjectData(ppData, pcbData, engine); simVarData != nil {
+		if simVarData := e.parseSimObjectData(ppData, pcbData); simVarData != nil {
 			msg["parsed_data"] = simVarData
 		}
 	}
@@ -282,7 +282,7 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 
 	// For EVENT, add the parsed event data
 	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT {
-		if eventData := parseEventData(ppData, pcbData, engine); eventData != nil {
+		if eventData := e.parseEventData(ppData, pcbData); eventData != nil {
 			msg["event"] = eventData
 		}
 	}
@@ -317,7 +317,7 @@ func getMessageTypeName(id types.SimConnectRecvID) string {
 }
 
 // parseEventData extracts event data from SIMCONNECT_RECV_EVENT message
-func parseEventData(ppData uintptr, pcbData uint32, engine *Engine) *types.EventData {
+func (e *Engine) parseEventData(ppData uintptr, pcbData uint32) *types.EventData {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
