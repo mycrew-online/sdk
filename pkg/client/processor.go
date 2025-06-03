@@ -101,7 +101,7 @@ func (e *Engine) dispatch() error {
 // handleMessage processes messages and sends them to the stream channel
 func (e *Engine) handleMessage(ppData uintptr, pcbData uint32) {
 	// Parse the message
-	msg := parseSimConnectToChannelMessage(ppData, pcbData, e)
+	msg := e.parseSimConnectToChannelMessage(ppData, pcbData)
 	// Handle QUIT messages for natural shutdown
 	if msg != nil && e.isQuitMessage(msg) {
 		// Thread-safe update of connection status

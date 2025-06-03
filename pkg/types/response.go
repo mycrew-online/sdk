@@ -52,8 +52,9 @@ type EventData struct {
 	GroupID   uint32 `json:"group_id"`   // ID of the group the event belongs to
 	EventID   uint32 `json:"event_id"`   // ID of the event
 	EventData uint32 `json:"event_data"` // Event-specific data value
-	EventName string `json:"event_name"` // Human-readable event name (if available)
-	EventType string `json:"event_type"` // Type of event: "system", "client", or "unknown"
+	// This is not needed due to message type
+	//EventName string `json:"event_name"` // Human-readable event name (if available)
+	//EventType string `json:"event_type"` // Type of event: "system", "client", or "unknown"
 }
 
 type SimConnectRecvID uint32

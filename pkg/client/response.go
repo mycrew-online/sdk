@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"unsafe"
 
 	"github.com/mycrew-online/sdk/pkg/types"
@@ -16,7 +15,7 @@ type SimVarData struct {
 
 // parseSimObjectData extracts sim variable data from SIMOBJECT_DATA message
 // Now type-aware - looks up the expected data type for proper parsing
-func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarData {
+func (e *Engine) parseSimObjectData(ppData uintptr, pcbData uint32) *SimVarData {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
@@ -28,9 +27,9 @@ func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarD
 	}
 
 	// Look up the expected data type for this DefineID (thread-safe)
-	engine.mu.RLock()
-	dataType, exists := engine.dataTypeRegistry[simObjData.DwDefineID]
-	engine.mu.RUnlock()
+	e.mu.RLock()
+	dataType, exists := e.dataTypeRegistry[simObjData.DwDefineID]
+	e.mu.RUnlock()
 	if !exists {
 		// Fallback to FLOAT32 if not found
 		dataType = types.SIMCONNECT_DATATYPE_FLOAT32
@@ -85,7 +84,7 @@ func parseSimObjectData(ppData uintptr, pcbData uint32, engine *Engine) *SimVarD
 }
 
 // parseSimConnectData processes incoming SimConnect messages for debugging
-func parseSimConnectData(ppData uintptr, pcbData uint32, engine *Engine) {
+/*func parseSimConnectData(ppData uintptr, pcbData uint32, engine *Engine) {
 	if ppData == 0 || pcbData == 0 {
 		// fmt.Println("No data received")
 		return
@@ -230,10 +229,10 @@ func parseSimConnectData(ppData uintptr, pcbData uint32, engine *Engine) {
 	default:
 		// fmt.Printf("❓ Unknown message type: %d\n", recv.DwID)
 	}
-}
+}*/
 
 // parseSimConnectToChannelMessage converts SimConnect data to a channel message
-func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Engine) any {
+func (e *Engine) parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32) any {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
@@ -242,7 +241,7 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 	recv := (*types.SIMCONNECT_RECV)(unsafe.Pointer(ppData))
 
 	// Debug: also call parseSimConnectData for console output
-	parseSimConnectData(ppData, pcbData, engine)
+	//parseSimConnectData(ppData, pcbData, engine)
 
 	// Create a simple message structure for the channel
 	msg := map[string]any{
@@ -256,7 +255,7 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 
 	// For SIMOBJECT_DATA, add the parsed values directly
 	if recv.DwID == types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA {
-		if simVarData := parseSimObjectData(ppData, pcbData, engine); simVarData != nil {
+		if simVarData := e.parseSimObjectData(ppData, pcbData); simVarData != nil {
 			msg["parsed_data"] = simVarData
 		}
 	}
@@ -283,7 +282,7 @@ func parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32, engine *Eng
 
 	// For EVENT, add the parsed event data
 	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT {
-		if eventData := parseEventData(ppData, pcbData, engine); eventData != nil {
+		if eventData := e.parseEventData(ppData, pcbData); eventData != nil {
 			msg["event"] = eventData
 		}
 	}
@@ -318,7 +317,7 @@ func getMessageTypeName(id types.SimConnectRecvID) string {
 }
 
 // parseEventData extracts event data from SIMCONNECT_RECV_EVENT message
-func parseEventData(ppData uintptr, pcbData uint32, engine *Engine) *types.EventData {
+func (e *Engine) parseEventData(ppData uintptr, pcbData uint32) *types.EventData {
 	if ppData == 0 || pcbData == 0 {
 		return nil
 	}
@@ -333,80 +332,11 @@ func parseEventData(ppData uintptr, pcbData uint32, engine *Engine) *types.Event
 		GroupID:   eventData.UGroupID,
 		EventID:   eventData.UEventID,
 		EventData: eventData.DwData,
-		EventType: "unknown", // Default type
+		//EventType: "unknown", // Default type
 	}
 
 	// Classify event type and resolve event name based on EventID
-	result.EventType, result.EventName = classifyEvent(eventData.UEventID, eventData.UGroupID)
+	//result.EventType, result.EventName = classifyEvent(eventData.UEventID, eventData.UGroupID)
 
 	return result
-}
-
-// classifyEvent determines the event type and name based on EventID and GroupID
-// According to SimConnect documentation:
-// - System events: Predefined simulator events (Paused, Unpaused, etc.)
-// - Client events: Events transmitted by clients (our electrical events)
-func classifyEvent(eventID uint32, groupID uint32) (eventType string, eventName string) {
-	// Map of our known client event IDs to their names
-	clientEvents := map[uint32]string{
-		10011511: "TOGGLE_EXTERNAL_POWER", // Our electrical system events
-		10025115: "TOGGLE_MASTER_BATTERY",
-		10041515: "TOGGLE_BEACON_LIGHTS",
-	}
-
-	// Check if this is one of our client events
-	if name, exists := clientEvents[eventID]; exists {
-		return "client", name
-	}
-
-	// Check for known system events (extend as needed)
-	// System events typically have different ID ranges and patterns
-	systemEvents := map[uint32]string{
-		1: "Paused",
-		2: "Unpaused",
-		3: "Sim",
-		// Add more system events as discovered
-	}
-
-	if name, exists := systemEvents[eventID]; exists {
-		return "system", name
-	}
-
-	// For unknown events, classify based on patterns or group ID
-	// GroupID of UNKNOWN_GROUP (DWORD_MAX) often indicates system events
-	if groupID == 0xFFFFFFFF { // UNKNOWN_GROUP (DWORD_MAX)
-		return "system", fmt.Sprintf("SystemEvent_%d", eventID)
-	}
-
-	// Default: assume client event with unknown name
-	return "client", fmt.Sprintf("ClientEvent_%d", eventID)
-}
-
-// isSystemEvent determines if an event name represents a system event
-// System events are predefined events from the simulator
-func isSystemEvent(eventName string) bool {
-	systemEvents := map[string]bool{
-		"Paused":                true,
-		"Unpaused":              true,
-		"Sim":                   true,
-		"SimStart":              true,
-		"SimStop":               true,
-		"AircraftLoaded":        true,
-		"FlightLoaded":          true,
-		"FlightSaved":           true,
-		"FlightPlanActivated":   true,
-		"FlightPlanDeactivated": true,
-		"PositionChanged":       true,
-		"CrashReset":            true,
-		"Crashed":               true,
-		"CustomMission":         true,
-		"MissionCompleted":      true,
-		"WeatherModeChanged":    true,
-		"View":                  true,
-		"Sound":                 true,
-		"ObjectAdded":           true,
-		"ObjectRemoved":         true,
-		// Add more system events as needed
-	}
-	return systemEvents[eventName]
 }
