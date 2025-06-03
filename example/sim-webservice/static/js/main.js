@@ -127,9 +127,31 @@ async function updateWeather() {
     }
 }
 
+// Dark mode toggle functionality
+function initializeThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            
+            if (isDark) {
+                html.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            }
+        });
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Update weather data every 2 seconds
     updateWeather(); // Initial load
     setInterval(updateWeather, 2000);
+    
+    initializeThemeToggle();
 });
