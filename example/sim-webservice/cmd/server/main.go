@@ -34,11 +34,11 @@ func main() {
 	}
 	defer monitorClient.Close()
 	// Initialize handlers
-	monitorHandler := handlers.NewMonitorHandler(monitorClient)
-	// Set up HTTP routes
+	monitorHandler := handlers.NewMonitorHandler(monitorClient) // Set up HTTP routes
 	http.HandleFunc("/", monitorHandler.HandleIndex)
 	http.HandleFunc("/api/monitor", monitorHandler.HandleMonitorAPI)
 	http.HandleFunc("/api/camera", monitorHandler.HandleCameraStateToggle)
+	http.HandleFunc("/api/external-power", monitorHandler.HandleExternalPowerToggle)
 	http.HandleFunc("/api/system", monitorClient.GetSystemEventsHandler)
 
 	// Serve static files

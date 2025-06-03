@@ -48,10 +48,13 @@ type FlightData struct {
 	AutopilotMaster uint32  `json:"autopilotMaster"` // boolean as uint32
 	SurfaceType     uint32  `json:"surfaceType"`     // enum
 	IndicatedSpeed  float32 `json:"indicatedSpeed"`  // knots
-
 	// Camera State
 	CameraState uint32 `json:"cameraState"` // enum: 2=Cockpit, 3=External/Chase, 4=Drone, etc.
-	LastUpdate  string `json:"lastUpdate"`
+
+	// Aircraft Systems
+	ExternalPowerOn uint32 `json:"externalPowerOn"` // boolean as uint32
+
+	LastUpdate string `json:"lastUpdate"`
 }
 
 // MonitorPreset represents a monitor configuration

@@ -59,9 +59,11 @@ const ( // Core Environmental Variables (Row 1)
 	AUTOPILOT_MASTER_DEFINE_ID = 28
 	SURFACE_TYPE_DEFINE_ID     = 29
 	INDICATED_SPEED_DEFINE_ID  = 30
-
 	// Camera State
 	CAMERA_STATE_DEFINE_ID = 36
+
+	// Aircraft Systems
+	EXTERNAL_POWER_DEFINE_ID = 37
 
 	// Request IDs
 	TEMP_REQUEST_ID                = 101
@@ -99,9 +101,11 @@ const ( // Core Environmental Variables (Row 1)
 	AUTOPILOT_MASTER_REQUEST_ID    = 128
 	SURFACE_TYPE_REQUEST_ID        = 129
 	INDICATED_SPEED_REQUEST_ID     = 130
-
 	// Camera Request ID
 	CAMERA_STATE_REQUEST_ID = 136
+
+	// Aircraft Systems Request IDs
+	EXTERNAL_POWER_REQUEST_ID = 137
 )
 
 // MonitorClient handles SimConnect communication for flight data
@@ -643,10 +647,18 @@ func (mc *MonitorClient) Connect() error {
 	}
 	if err := mc.sdk.RequestSimVarDataPeriodic(INDICATED_SPEED_DEFINE_ID, INDICATED_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start indicated speed monitoring: %v", err)
-	}
-	// Register Camera State
+	} // Register Camera State
 	if err := mc.RegisterCameraState(); err != nil {
 		return fmt.Errorf("failed to register camera state: %v", err)
+	}
+	// Register Aircraft Systems
+	if err := mc.RegisterAircraftSystems(); err != nil {
+		return fmt.Errorf("failed to register aircraft systems: %v", err)
+	}
+
+	// Register Aircraft Events
+	if err := mc.RegisterAircraftEvents(); err != nil {
+		return fmt.Errorf("failed to register aircraft events: %v", err)
 	}
 
 	// Register System Events
@@ -867,8 +879,38 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 		mc.currentData.IndicatedSpeed = floatValue
 	case CAMERA_STATE_DEFINE_ID:
 		mc.currentData.CameraState = intValue
+	case EXTERNAL_POWER_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.ExternalPowerOn = 1
+		} else {
+			mc.currentData.ExternalPowerOn = 0
+		}
 	}
 
 	// Update timestamp
 	mc.currentData.LastUpdate = time.Now().Format("15:04:05")
+}
+
+// RegisterAircraftSystems registers aircraft systems variables with SimConnect
+func (mc *MonitorClient) RegisterAircraftSystems() error {
+	// Register External Power On
+	if err := mc.sdk.RegisterSimVarDefinition(
+		EXTERNAL_POWER_DEFINE_ID,
+		"EXTERNAL POWER ON",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register EXTERNAL POWER ON: %v", err)
+	}
+
+	// Request periodic updates for external power
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		EXTERNAL_POWER_DEFINE_ID,
+		EXTERNAL_POWER_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start external power monitoring: %v", err)
+	}
+
+	return nil
 }

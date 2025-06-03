@@ -91,14 +91,16 @@ async function updateMonitorData() {
             const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
             document.getElementById('mapsLink').href = mapsUrl;            document.getElementById('mapsLink2').href = mapsUrl;
         }
-        
-        // Update Airport & Navigation Info (Row 4)
+          // Update Airport & Navigation Info (Row 4)
         document.getElementById('nearestAirport').textContent = data.nearestAirport || "--";
         document.getElementById('airportDistance').textContent = Math.round(data.distanceToAirport || 0);
         document.getElementById('comFrequency').textContent = (data.comFrequency || 0).toFixed(3);
         document.getElementById('navFrequency').textContent = (data.nav1Frequency || 0).toFixed(3);
         document.getElementById('gpsDistance').textContent = Math.round(data.gpsDistance || 0);
         document.getElementById('gpsEte').textContent = Math.round(data.gpsEte || 0);
+
+        // Update External Power Status
+        updateExternalPowerUI(data.externalPowerOn || 0);
         
         // Update Flight Status (Row 5)
         document.getElementById('onGround').textContent = data.onGround ? "✅ Yes" : "❌ No";
@@ -209,6 +211,63 @@ function initializeCameraToggle() {
             }
         });
     }
+}
+
+// External Power functionality
+function updateExternalPowerUI(powerState) {
+    const statusElement = document.getElementById('externalPowerStatus');
+    const buttonElement = document.getElementById('externalPowerToggle');
+    const buttonTextElement = document.getElementById('externalPowerButtonText');
+    
+    if (!statusElement || !buttonElement || !buttonTextElement) return;
+    
+    const isOn = powerState === 1;
+    
+    // Update status display
+    if (isOn) {
+        statusElement.innerHTML = '<span class="text-green-600 font-bold">⚡ ON</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 hover:bg-red-600 text-white focus:ring-red-500';
+        buttonTextElement.textContent = 'Turn OFF';
+    } else {
+        statusElement.innerHTML = '<span class="text-red-600 font-bold">❌ OFF</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-500 hover:bg-green-600 text-white focus:ring-green-500';
+        buttonTextElement.textContent = 'Turn ON';
+    }
+    
+    // Enable the button
+    buttonElement.disabled = false;
+}
+
+// Toggle external power
+async function toggleExternalPower() {
+    const buttonElement = document.getElementById('externalPowerToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/external-power', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('External power toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle external power:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
 }
 
 // Initialize the application

@@ -61,9 +61,8 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">                <div class="flex space-x-2">
                     <button id="monitorTab" onclick="showTab('monitor')" class="tab-button active flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
                         ✈️ Flight Monitor
-                    </button>
-                    <button id="aircraftTab" onclick="showTab('aircraft')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
-                        ✈️ Aircraft (Coming Soon)
+                    </button>                    <button id="aircraftTab" onclick="showTab('aircraft')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+                        ✈️ Aircraft
                     </button>
                     <button id="systemsTab" onclick="showTab('systems')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
                         ⚡ Systems (Coming Soon)
@@ -508,11 +507,37 @@
                         </div>
                     </div>
                 </div>
-            </div>            <!-- Aircraft Tab (Placeholder) -->
+            </div>            <!-- Aircraft Tab -->
             <div id="aircraftContent" class="tab-content hidden">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
-                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">✈️ Aircraft Data</h3>
-                    <p class="text-gray-500 dark:text-gray-400">Aircraft monitoring will be added in the next phase</p>
+                <!-- External Power Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">⚡ External Power</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">🔌</div>
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-700 dark:text-gray-300">External Power Unit</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Ground power connection status</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="text-right">
+                                    <div class="text-sm font-medium text-gray-600 dark:text-gray-400">Status</div>
+                                    <div id="externalPowerStatus" class="text-lg font-bold">
+                                        <span class="text-gray-500">--</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    id="externalPowerToggle" 
+                                    onclick="toggleExternalPower()"
+                                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                    <span id="externalPowerButtonText">Toggle</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

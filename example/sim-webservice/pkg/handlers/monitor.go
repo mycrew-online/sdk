@@ -44,3 +44,8 @@ func (mh *MonitorHandler) HandleMonitorAPI(w http.ResponseWriter, r *http.Reques
 func (mh *MonitorHandler) HandleCameraStateToggle(w http.ResponseWriter, r *http.Request) {
 	mh.monitorClient.SetCameraState(w, r)
 }
+
+// HandleExternalPowerToggle handles toggling external power
+func (mh *MonitorHandler) HandleExternalPowerToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleExternalPowerHandler(w, r)
+}
