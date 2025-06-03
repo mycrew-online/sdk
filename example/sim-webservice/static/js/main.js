@@ -57,14 +57,23 @@ async function updateWeather() {
         document.getElementById('magVar').textContent = (data.magVar || 0).toFixed(1);
         document.getElementById('seaLevelPress').textContent = (data.seaLevelPress || 0).toFixed(1);
         document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
+          // Update Position & Navigation Data (Row 3)
+        const lat = data.latitude || 0;
+        const lng = data.longitude || 0;
         
-        // Update Position & Navigation Data (Row 3)
-        document.getElementById('latitude').textContent = (data.latitude || 0).toFixed(6);
-        document.getElementById('longitude').textContent = (data.longitude || 0).toFixed(6);
+        document.getElementById('latitude').textContent = lat.toFixed(6);
+        document.getElementById('longitude').textContent = lng.toFixed(6);
         document.getElementById('altitude').textContent = Math.round(data.altitude || 0);
         document.getElementById('groundSpeed').textContent = (data.groundSpeed || 0).toFixed(1);
         document.getElementById('heading').textContent = Math.round(data.heading || 0);
         document.getElementById('verticalSpeed').textContent = (data.verticalSpeed || 0).toFixed(1);
+        
+        // Update Google Maps links
+        if (lat !== 0 && lng !== 0) {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            document.getElementById('mapsLink').href = mapsUrl;
+            document.getElementById('mapsLink2').href = mapsUrl;
+        }
           // Update Airport & Navigation Info (Row 4)
         document.getElementById('nearestAirport').textContent = data.nearestAirport || "--";
         document.getElementById('airportDistance').textContent = Math.round(data.distanceToAirport || 0);
