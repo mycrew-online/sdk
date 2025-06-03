@@ -12,3 +12,28 @@
 .tab-button:not(.active):hover {
     background-color: #e5e7eb;
 }
+
+/* Responsive card styles */
+.flight-card {
+    @apply bg-white rounded-lg shadow-lg p-3 sm:p-4 lg:p-6;
+}
+
+.flight-card-header {
+    @apply flex items-center justify-between mb-2;
+}
+
+.flight-card-title {
+    @apply text-xs sm:text-sm font-medium text-gray-600;
+}
+
+.flight-card-icon {
+    @apply text-lg sm:text-xl lg:text-2xl;
+}
+
+.flight-card-value {
+    @apply text-base sm:text-lg lg:text-2xl font-bold text-flight-900;
+}
+
+.flight-card-unit {
+    @apply text-xs sm:text-sm lg:text-lg text-gray-500;
+}

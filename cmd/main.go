@@ -401,9 +401,8 @@ func main() {
 
 							// Try to cast to EventData
 							if parsedEvent, ok := eventData.(*types.EventData); ok {
-								fmt.Printf("   🎯 EVENT: ID=%d, Group=%d, Data=%d, Type=%s, Name=%s\n",
-									parsedEvent.EventID, parsedEvent.GroupID, parsedEvent.EventData,
-									parsedEvent.EventType, parsedEvent.EventName)
+								fmt.Printf("   🎯 EVENT: ID=%d, Group=%d, Data=%d",
+									parsedEvent.EventID, parsedEvent.GroupID, parsedEvent.EventData)
 
 								// Special handling for known events
 								switch parsedEvent.EventID {

@@ -53,11 +53,62 @@ async function updateWeather() {
         
         document.getElementById('densityAltitude').textContent = Math.round(data.densityAltitude || 0);
         document.getElementById('groundAltitude').textContent = Math.round(data.groundAltitude || 0);
-        
-        // Update Additional Environmental Data
+          // Update Additional Environmental Data
         document.getElementById('magVar').textContent = (data.magVar || 0).toFixed(1);
         document.getElementById('seaLevelPress').textContent = (data.seaLevelPress || 0).toFixed(1);
         document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
+        
+        // Update Position & Navigation Data (Row 3)
+        document.getElementById('latitude').textContent = (data.latitude || 0).toFixed(6);
+        document.getElementById('longitude').textContent = (data.longitude || 0).toFixed(6);
+        document.getElementById('altitude').textContent = Math.round(data.altitude || 0);
+        document.getElementById('groundSpeed').textContent = (data.groundSpeed || 0).toFixed(1);
+        document.getElementById('heading').textContent = Math.round(data.heading || 0);
+        document.getElementById('verticalSpeed').textContent = (data.verticalSpeed || 0).toFixed(1);
+          // Update Airport & Navigation Info (Row 4)
+        document.getElementById('nearestAirport').textContent = data.nearestAirport || "--";
+        document.getElementById('airportDistance').textContent = Math.round(data.distanceToAirport || 0);
+        document.getElementById('comFrequency').textContent = (data.comFrequency || 0).toFixed(3);
+        document.getElementById('navFrequency').textContent = (data.nav1Frequency || 0).toFixed(3);
+        document.getElementById('gpsDistance').textContent = Math.round(data.gpsDistance || 0);
+        document.getElementById('gpsEte').textContent = Math.round(data.gpsEte || 0);
+        
+        // Update Flight Status (Row 5)
+        document.getElementById('onGround').textContent = data.onGround ? "✅ Yes" : "❌ No";
+        document.getElementById('onRunway').textContent = data.onRunway ? "✅ Yes" : "❌ No";
+        document.getElementById('gpsActive').textContent = data.gpsActive ? "✅ Active" : "❌ Inactive";
+        document.getElementById('autopilotMaster').textContent = data.autopilotMaster ? "✅ On" : "❌ Off";
+        
+        // Surface Type mapping
+        const surfaceTypes = {
+            0: "Concrete",
+            1: "Grass",
+            2: "Water",
+            3: "Grass_bumpy",
+            4: "Asphalt",
+            5: "Short_grass",
+            6: "Long_grass",
+            7: "Hard_turf",
+            8: "Snow",
+            9: "Ice",
+            10: "Urban",
+            11: "Forest",
+            12: "Dirt",
+            13: "Coral",
+            14: "Gravel",
+            15: "Oil_treated",
+            16: "Steel_mats",
+            17: "Bituminus",
+            18: "Brick",
+            19: "Macadam",
+            20: "Planks",
+            21: "Sand",
+            22: "Shale",
+            23: "Tarmac",
+            24: "Wright_flyer_track"
+        };
+        document.getElementById('surfaceType').textContent = surfaceTypes[data.surfaceType] || "Unknown";
+        document.getElementById('indicatedSpeed').textContent = (data.indicatedSpeed || 0).toFixed(1);
         
         // Update timestamp
         document.getElementById('lastUpdate').textContent = data.lastUpdate;

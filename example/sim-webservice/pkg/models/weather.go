@@ -1,7 +1,7 @@
 package models
 
-// EnvironmentalData holds the current environmental information
-type EnvironmentalData struct {
+// FlightData holds comprehensive flight monitoring information
+type FlightData struct {
 	// Core Weather (Row 1)
 	Temperature   float32 `json:"temperature"`   // Celsius
 	Pressure      float32 `json:"pressure"`      // inHg
@@ -18,11 +18,38 @@ type EnvironmentalData struct {
 	SeaLevelPress   float32 `json:"seaLevelPress"`   // millibars
 	AmbientDensity  float32 `json:"ambientDensity"`  // slugs per cubic feet
 
+	// Position & Navigation Data (Row 3)
+	Latitude      float32 `json:"latitude"`      // degrees
+	Longitude     float32 `json:"longitude"`     // degrees
+	Altitude      float32 `json:"altitude"`      // feet
+	GroundSpeed   float32 `json:"groundSpeed"`   // knots
+	Heading       float32 `json:"heading"`       // degrees
+	VerticalSpeed float32 `json:"verticalSpeed"` // feet per second
+
+	// Airport/Navigation Info (Row 4)
+	NearestAirport    string  `json:"nearestAirport"`    // airport name
+	DistanceToAirport float32 `json:"distanceToAirport"` // meters
+	ComFrequency      float32 `json:"comFrequency"`      // MHz
+	Nav1Frequency     float32 `json:"nav1Frequency"`     // MHz
+	GpsDistance       float32 `json:"gpsDistance"`       // meters
+	GpsEte            float32 `json:"gpsEte"`            // seconds
+
+	// Flight Status (Row 5)
+	OnGround        uint32  `json:"onGround"`        // boolean as uint32
+	OnRunway        uint32  `json:"onRunway"`        // boolean as uint32
+	GpsActive       uint32  `json:"gpsActive"`       // boolean as uint32
+	AutopilotMaster uint32  `json:"autopilotMaster"` // boolean as uint32
+	SurfaceType     uint32  `json:"surfaceType"`     // enum
+	IndicatedSpeed  float32 `json:"indicatedSpeed"`  // knots
+
 	LastUpdate string `json:"lastUpdate"`
 }
 
 // WeatherData is an alias for backward compatibility
-type WeatherData = EnvironmentalData
+type WeatherData = FlightData
+
+// EnvironmentalData is an alias for backward compatibility
+type EnvironmentalData = FlightData
 
 // WeatherPreset represents a weather configuration
 type WeatherPreset struct {

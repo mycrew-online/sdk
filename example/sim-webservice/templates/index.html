@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSFS Sim Monitor</title>
+    <title>MSFS Flight Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -23,20 +23,16 @@
     </script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="bg-gradient-to-b from-sky-100 to-blue-200 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-flight-900 mb-2">✈️ MSFS Sim Monitor</h1>
-            <p class="text-flight-700">Real-time simulator data from Microsoft Flight Simulator</p>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="max-w-4xl mx-auto mb-6">
+<body class="bg-gradient-to-b from-sky-100 to-blue-200 min-h-screen">    <div class="container mx-auto px-2 py-4">        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-flight-900 mb-2">✈️ MSFS Flight Monitor</h1>
+            <p class="text-flight-700">Real-time flight data and environmental monitoring from Microsoft Flight Simulator</p>
+        </div>        <!-- Navigation Tabs -->
+        <div class="w-full mx-auto mb-4">
             <div class="bg-white rounded-lg shadow-lg p-2">
                 <div class="flex space-x-2">
                     <button id="weatherTab" onclick="showTab('weather')" class="tab-button active flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
-                        🌤️ Weather
+                        ✈️ Flight Monitor
                     </button>
                     <button id="aircraftTab" onclick="showTab('aircraft')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
                         ✈️ Aircraft (Coming Soon)
@@ -46,14 +42,12 @@
                     </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="max-w-4xl mx-auto">
+        </div>        <!-- Tab Content -->
+        <div class="w-full mx-auto">
             <!-- Weather Tab -->
             <div id="weatherContent" class="tab-content">
                 <!-- Status Card -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="bg-white rounded-lg shadow-lg p-4 mb-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
@@ -65,149 +59,344 @@
                     </div>
                 </div>                <!-- Core Weather Cards (Row 1) -->
                 <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌤️ Core Weather</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- Temperature Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌤️ Core Weather</h3>                    <div class="grid grid-cols-4 gap-2">                        <!-- Temperature Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600">Temperature</h4>
-                                <span class="text-2xl">🌡️</span>
+                                <span class="text-xl">🌡️</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="temperature">--</span><span class="text-lg text-gray-500">°C</span>
+                            <div class="text-xl font-bold text-flight-900">
+                                <span id="temperature">--</span><span class="text-base text-gray-500">°C</span>
                             </div>
                         </div>
 
                         <!-- Pressure Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="bg-white rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600">Pressure</h4>
-                                <span class="text-2xl">📊</span>
+                                <span class="text-xl">📊</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="pressure">--</span><span class="text-lg text-gray-500">inHg</span>
+                            <div class="text-xl font-bold text-flight-900">
+                                <span id="pressure">--</span><span class="text-base text-gray-500">inHg</span>
                             </div>
                         </div>
 
                         <!-- Wind Speed Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="bg-white rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600">Wind Speed</h4>
-                                <span class="text-2xl">💨</span>
+                                <span class="text-xl">💨</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="windSpeed">--</span><span class="text-lg text-gray-500">kts</span>
+                            <div class="text-xl font-bold text-flight-900">
+                                <span id="windSpeed">--</span><span class="text-base text-gray-500">kts</span>
                             </div>
                         </div>
 
                         <!-- Wind Direction Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="bg-white rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600">Wind Direction</h4>
-                                <span class="text-2xl">🧭</span>
+                                <span class="text-xl">🧭</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="windDirection">--</span><span class="text-lg text-gray-500">°</span>
+                            <div class="text-xl font-bold text-flight-900">
+                                <span id="windDirection">--</span><span class="text-base text-gray-500">°</span>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Environmental Conditions Cards (Row 2) -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌍 Environmental Conditions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- Visibility Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <div class="flex items-center justify-between mb-2">
-                                <h4 class="text-sm font-medium text-gray-600">Visibility</h4>
-                                <span class="text-2xl">👁️</span>
-                            </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="visibility">--</span><span class="text-lg text-gray-500">m</span>
-                            </div>
-                        </div>
-
-                        <!-- Precipitation Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <div class="flex items-center justify-between mb-2">
-                                <h4 class="text-sm font-medium text-gray-600">Precipitation</h4>
-                                <span class="text-2xl" id="precipIcon">🌦️</span>
+                </div>                <!-- Environmental Conditions Cards (Row 2) -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌍 Environmental Conditions</h3>                    <div class="grid grid-cols-8 gap-2">                        <!-- Visibility Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Visibility</h4>
+                                <span class="text-lg">👁️</span>
                             </div>
                             <div class="text-lg font-bold text-flight-900">
-                                <div id="precipType" class="text-sm text-gray-600">--</div>
-                                <span id="precipRate">--</span><span class="text-sm text-gray-500">mm</span>
+                                <span id="visibility">--</span><span class="text-sm text-gray-500">m</span>
+                            </div>
+                        </div>                        <!-- Precipitation Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Precipitation</h4>
+                                <span class="text-lg" id="precipIcon">🌦️</span>
+                            </div>
+                            <div class="text-base font-bold text-flight-900">
+                                <div id="precipType" class="text-xs text-gray-600">--</div>
+                                <span id="precipRate">--</span><span class="text-xs text-gray-500">mm</span>
                             </div>
                         </div>
 
                         <!-- Density Altitude Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <div class="flex items-center justify-between mb-2">
-                                <h4 class="text-sm font-medium text-gray-600">Density Alt</h4>
-                                <span class="text-2xl">📏</span>
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Density Alt</h4>
+                                <span class="text-lg">📏</span>
+                            </div>                            <div class="text-lg font-bold text-flight-900">
+                                <span id="densityAltitude">--</span><span class="text-sm text-gray-500">ft</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="densityAltitude">--</span><span class="text-lg text-gray-500">ft</span>
+                        </div>                        <!-- Ground Elevation Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Ground Elev</h4>
+                                <span class="text-lg">⛰️</span>
+                            </div>
+                            <div class="text-lg font-bold text-flight-900">
+                                <span id="groundAltitude">--</span><span class="text-sm text-gray-500">m</span>
                             </div>
                         </div>
 
-                        <!-- Ground Elevation Card -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <div class="flex items-center justify-between mb-2">
-                                <h4 class="text-sm font-medium text-gray-600">Ground Elev</h4>
-                                <span class="text-2xl">⛰️</span>
+                        <!-- Magnetic Variation Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Mag Variation</h4>
+                                <span class="text-lg">🧲</span>
                             </div>
-                            <div class="text-2xl font-bold text-flight-900">
-                                <span id="groundAltitude">--</span><span class="text-lg text-gray-500">m</span>
+                            <div class="text-lg font-bold text-flight-900">
+                                <span id="magVar">--</span><span class="text-sm text-gray-500">°</span>
+                            </div>
+                        </div>
+
+                        <!-- Sea Level Pressure Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Sea Level Press</h4>
+                                <span class="text-lg">🌊</span>
+                            </div>
+                            <div class="text-lg font-bold text-flight-900">
+                                <span id="seaLevelPress">--</span><span class="text-sm text-gray-500">mb</span>
+                            </div>
+                        </div>
+
+                        <!-- Air Density Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-gray-600">Air Density</h4>
+                                <span class="text-lg">💨</span>
+                            </div>
+                            <div class="text-base font-bold text-flight-900">
+                                <span id="ambientDensity">--</span><span class="text-xs text-gray-500">slugs/ft³</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Info Card -->
+                        <div class="bg-gradient-to-br from-flight-50 to-flight-100 rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-xs font-medium text-flight-700">Status</h4>
+                                <span class="text-lg">📊</span>
+                            </div>
+                            <div class="text-xs text-flight-600">
+                                <div>30 Variables</div>
+                                <div>Live Updates</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Additional Environmental Data -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <!-- Magnetic Variation Card -->
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-medium text-gray-600">Mag Variation</h4>
-                            <span class="text-2xl">🧲</span>
+                <!-- Position & Navigation Data (Row 3) -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">📍 Position & Navigation</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-4">                        <!-- Latitude Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Latitude</h4>
+                                <span class="text-xl lg:text-2xl">🌍</span>
+                            </div>
+                            <div class="text-lg lg:text-xl font-bold text-flight-900">
+                                <span id="latitude">--</span><span class="text-sm lg:text-lg text-gray-500">°</span>
+                            </div>
                         </div>
-                        <div class="text-2xl font-bold text-flight-900">
-                            <span id="magVar">--</span><span class="text-lg text-gray-500">°</span>
+
+                        <!-- Longitude Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Longitude</h4>
+                                <span class="text-xl lg:text-2xl">🌍</span>
+                            </div>
+                            <div class="text-lg lg:text-xl font-bold text-flight-900">
+                                <span id="longitude">--</span><span class="text-sm lg:text-lg text-gray-500">°</span>
+                            </div>
+                        </div>
+
+                        <!-- Altitude Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Altitude</h4>
+                                <span class="text-xl lg:text-2xl">📈</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="altitude">--</span><span class="text-sm lg:text-lg text-gray-500">ft</span>
+                            </div>
+                        </div>
+
+                        <!-- Ground Speed Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Ground Speed</h4>
+                                <span class="text-xl lg:text-2xl">🏃</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="groundSpeed">--</span><span class="text-sm lg:text-lg text-gray-500">kts</span>
+                            </div>
+                        </div>
+
+                        <!-- Heading Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Heading</h4>
+                                <span class="text-xl lg:text-2xl">🧭</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="heading">--</span><span class="text-sm lg:text-lg text-gray-500">°</span>
+                            </div>
+                        </div>
+
+                        <!-- Vertical Speed Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Vertical Speed</h4>
+                                <span class="text-xl lg:text-2xl">📊</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="verticalSpeed">--</span><span class="text-sm lg:text-lg text-gray-500">fps</span>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Sea Level Pressure Card -->
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-medium text-gray-600">Sea Level Press</h4>
-                            <span class="text-2xl">🌊</span>
+                </div>                <!-- Airport & Navigation Info (Row 4) -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🛩️ Airport & Navigation</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-4">                        <!-- Nearest Airport Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Nearest Airport</h4>
+                                <span class="text-xl lg:text-2xl">🛬</span>
+                            </div>
+                            <div class="text-base lg:text-lg font-bold text-flight-900">
+                                <span id="nearestAirport">--</span>
+                            </div>
                         </div>
-                        <div class="text-2xl font-bold text-flight-900">
-                            <span id="seaLevelPress">--</span><span class="text-lg text-gray-500">mb</span>
+
+                        <!-- Airport Distance Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Airport Distance</h4>
+                                <span class="text-xl lg:text-2xl">📏</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="airportDistance">--</span><span class="text-sm lg:text-lg text-gray-500">m</span>
+                            </div>
+                        </div>
+
+                        <!-- COM Frequency Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">COM Frequency</h4>
+                                <span class="text-xl lg:text-2xl">📻</span>
+                            </div>
+                            <div class="text-base lg:text-xl font-bold text-flight-900">
+                                <span id="comFrequency">--</span><span class="text-sm lg:text-lg text-gray-500">MHz</span>
+                            </div>
+                        </div>
+
+                        <!-- NAV1 Frequency Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">NAV1 Frequency</h4>
+                                <span class="text-xl lg:text-2xl">📡</span>
+                            </div>
+                            <div class="text-base lg:text-xl font-bold text-flight-900">
+                                <span id="navFrequency">--</span><span class="text-sm lg:text-lg text-gray-500">MHz</span>
+                            </div>
+                        </div>
+
+                        <!-- GPS Distance Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">GPS Distance</h4>
+                                <span class="text-xl lg:text-2xl">🛰️</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="gpsDistance">--</span><span class="text-sm lg:text-lg text-gray-500">m</span>
+                            </div>
+                        </div>
+
+                        <!-- GPS ETE Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">GPS ETE</h4>
+                                <span class="text-xl lg:text-2xl">⏱️</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="gpsEte">--</span><span class="text-sm lg:text-lg text-gray-500">sec</span>
+                            </div>
                         </div>
                     </div>
+                </div>                <!-- Flight Status (Row 5) -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🔧 Flight Status</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-4">                        <!-- On Ground Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">On Ground</h4>
+                                <span class="text-xl lg:text-2xl">🛬</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="onGround">--</span>
+                            </div>
+                        </div>
 
-                    <!-- Air Density Card -->
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-medium text-gray-600">Air Density</h4>
-                            <span class="text-2xl">💨</span>
+                        <!-- On Runway Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">On Runway</h4>
+                                <span class="text-xl lg:text-2xl">🛫</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="onRunway">--</span>
+                            </div>
                         </div>
-                        <div class="text-xl font-bold text-flight-900">
-                            <span id="ambientDensity">--</span><span class="text-sm text-gray-500">slugs/ft³</span>
-                        </div>
-                    </div>
 
-                    <!-- Status Info Card -->
-                    <div class="bg-gradient-to-br from-flight-50 to-flight-100 rounded-lg shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-medium text-flight-700">Status</h4>
-                            <span class="text-2xl">📊</span>
+                        <!-- GPS Active Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">GPS Active</h4>
+                                <span class="text-xl lg:text-2xl">📍</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="gpsActive">--</span>
+                            </div>
                         </div>
-                        <div class="text-sm text-flight-600">
-                            <div>12 Variables</div>
-                            <div>Live Updates</div>
+
+                        <!-- Autopilot Master Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Autopilot</h4>
+                                <span class="text-xl lg:text-2xl">🤖</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="autopilotMaster">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Surface Type Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Surface Type</h4>
+                                <span class="text-xl lg:text-2xl">🌍</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="surfaceType">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Indicated Speed Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs lg:text-sm font-medium text-gray-600">Indicated Speed</h4>
+                                <span class="text-xl lg:text-2xl">🏎️</span>
+                            </div>
+                            <div class="text-lg lg:text-2xl font-bold text-flight-900">
+                                <span id="indicatedSpeed">--</span><span class="text-sm lg:text-lg text-gray-500">kts</span>
+                            </div>
                         </div>
                     </div>
                 </div>
