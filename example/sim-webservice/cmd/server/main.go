@@ -34,11 +34,12 @@ func main() {
 		log.Fatalf("❌ Failed to initialize SimConnect: %v", err)
 	}
 	defer weatherClient.Close()
-
 	// Initialize handlers
 	weatherHandler := handlers.NewWeatherHandler(weatherClient) // Set up HTTP routes
 	http.HandleFunc("/", weatherHandler.HandleIndex)
 	http.HandleFunc("/api/weather", weatherHandler.HandleWeatherAPI)
+	http.HandleFunc("/api/camera", weatherHandler.HandleCameraStateToggle)
+	http.HandleFunc("/api/system", weatherClient.GetSystemEventsHandler)
 
 	// Serve static files
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

@@ -153,11 +153,66 @@ function initializeThemeToggle() {
     }
 }
 
+// Camera state toggle functionality
+function initializeCameraToggle() {
+    const cameraToggle = document.getElementById('cameraToggle');
+    
+    if (cameraToggle) {
+        cameraToggle.addEventListener('click', async function() {
+            // Get current camera state
+            const response = await fetch('/api/weather');
+            const data = await response.json();
+            let currentState = data.cameraState || 2; // Default to cockpit view (2) if not available
+            
+            // Define the camera state sequence
+            const cameraStates = [2, 3, 4, 5, 6]; // Cockpit, External, Drone, Fixed, Environment
+            const cameraNames = {
+                2: "Cockpit View", 
+                3: "External View", 
+                4: "Drone View", 
+                5: "Fixed View", 
+                6: "Environment View"
+            };
+            
+            // Find current state in the sequence
+            let currentIndex = cameraStates.indexOf(currentState);
+            if (currentIndex === -1) currentIndex = 0;
+            
+            // Move to next state in the sequence
+            let nextIndex = (currentIndex + 1) % cameraStates.length;
+            let nextState = cameraStates[nextIndex];
+            
+            // Update tooltip with camera name
+            cameraToggle.title = cameraNames[nextState] || "Camera View";
+            
+            // Send request to change camera state
+            try {
+                await fetch('/api/camera', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ state: nextState })
+                });            } catch (error) {
+                console.error('Failed to change camera state:', error);
+            }
+        });
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    // Update weather data every 2 seconds
-    updateWeather(); // Initial load
+    // Show default tab
+    showTab('weather');
+    
+    // Update data every 2 seconds
+    updateWeather(); // Initial weather load
+    updateSystemEvents(); // Initial system events load
+    
+    // Set intervals for updates
     setInterval(updateWeather, 2000);
+    setInterval(updateSystemEvents, 2000);
     
     initializeThemeToggle();
+    initializeCameraToggle();
 });

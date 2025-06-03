@@ -39,3 +39,8 @@ func (wh *WeatherHandler) HandleWeatherAPI(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(weather)
 }
+
+// HandleCameraStateToggle handles setting the camera state
+func (wh *WeatherHandler) HandleCameraStateToggle(w http.ResponseWriter, r *http.Request) {
+	wh.weatherClient.SetCameraState(w, r)
+}

@@ -43,6 +43,14 @@
             </svg>
         </button>
         
+        <!-- Camera State Toggle - Top Right, next to Dark/Light Mode Toggle -->
+        <button id="cameraToggle" class="group absolute top-4 right-16 inline-flex items-center justify-center p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 z-10" title="Toggle Camera View (Cockpit, External, Drone, etc.)">
+            <!-- Camera Icon -->
+            <svg class="w-5 h-5 text-gray-600 dark:text-gray-300 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+            </svg>
+        </button>
+        
         <!-- Header -->
         <div class="text-center mb-6">
             <div class="mb-2">
@@ -89,7 +97,34 @@
                             </div>
                         </div>
                     </div>
-                </div>                <!-- Core Weather Cards (Row 1) -->
+                </div>
+                
+                <!-- System Events Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+                    <h3 class="text-lg font-semibold text-flight-900 dark:text-flight-50 mb-3">System Events</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Simulator</div>
+                            <div id="simRunningStatus" class="text-lg font-bold text-flight-700 dark:text-flight-300">
+                                <span class="status-indicator">⏳</span> Unknown
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Pause State</div>
+                            <div id="simPausedStatus" class="text-lg font-bold text-flight-700 dark:text-flight-300">
+                                <span class="status-indicator">⏳</span> Unknown
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Event</div>
+                            <div id="lastEventName" class="text-lg font-bold text-flight-700 dark:text-flight-300">None</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Event Time</div>
+                            <div id="lastEventTime" class="text-lg font-bold text-flight-700 dark:text-flight-300">--:--:--</div>
+                        </div>
+                    </div>
+                </div><!-- Core Weather Cards (Row 1) -->
                 <div class="mb-4">
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌤️ Core Weather</h3>                    <div class="grid grid-cols-4 gap-2 mb-2">                        <!-- Temperature Card -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
@@ -489,9 +524,9 @@
                     <p class="text-gray-500 dark:text-gray-400">Systems monitoring will be added in the next phase</p>
                 </div>
             </div>
-        </div>
-    </div>
+        </div>    </div>
 
+    <script src="/static/js/system.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

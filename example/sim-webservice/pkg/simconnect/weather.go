@@ -51,6 +51,7 @@ const ( // Core Weather Variables (Row 1)
 	NAV1_FREQUENCY_DEFINE_ID      = 22
 	GPS_DISTANCE_DEFINE_ID        = 23
 	GPS_ETE_DEFINE_ID             = 24
+
 	// Flight Status Variables (Row 5)
 	ON_GROUND_DEFINE_ID        = 25
 	ON_RUNWAY_DEFINE_ID        = 26
@@ -58,6 +59,9 @@ const ( // Core Weather Variables (Row 1)
 	AUTOPILOT_MASTER_DEFINE_ID = 28
 	SURFACE_TYPE_DEFINE_ID     = 29
 	INDICATED_SPEED_DEFINE_ID  = 30
+
+	// Camera State
+	CAMERA_STATE_DEFINE_ID = 36
 
 	// Request IDs
 	TEMP_REQUEST_ID                = 101
@@ -95,12 +99,16 @@ const ( // Core Weather Variables (Row 1)
 	AUTOPILOT_MASTER_REQUEST_ID    = 128
 	SURFACE_TYPE_REQUEST_ID        = 129
 	INDICATED_SPEED_REQUEST_ID     = 130
+
+	// Camera Request ID
+	CAMERA_STATE_REQUEST_ID = 136
 )
 
 // WeatherClient handles SimConnect communication for flight data
 type WeatherClient struct {
 	sdk            *client.Engine
 	currentWeather models.FlightData
+	systemEvents   SystemEvents
 	mutex          sync.RWMutex
 	dllPath        string // Store custom DLL path if provided
 }
@@ -634,9 +642,17 @@ func (wc *WeatherClient) Connect() error {
 	if err := wc.sdk.RequestSimVarDataPeriodic(SURFACE_TYPE_DEFINE_ID, SURFACE_TYPE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start surface type monitoring: %v", err)
 	}
-
 	if err := wc.sdk.RequestSimVarDataPeriodic(INDICATED_SPEED_DEFINE_ID, INDICATED_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start indicated speed monitoring: %v", err)
+	}
+	// Register Camera State
+	if err := wc.RegisterCameraState(); err != nil {
+		return fmt.Errorf("failed to register camera state: %v", err)
+	}
+
+	// Register System Events
+	if err := wc.RegisterSystemEvents(); err != nil {
+		return fmt.Errorf("failed to register system events: %v", err)
 	}
 
 	fmt.Println("✅ Periodic flight monitoring started!")
@@ -675,33 +691,48 @@ func (wc *WeatherClient) processSimConnectMessages() {
 	if messages == nil {
 		log.Fatal("❌ Failed to start listening for SimConnect messages")
 	}
-
 	for msg := range messages {
 		msgMap, ok := msg.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// Only process SIMOBJECT_DATA messages
+		// Check message type
 		msgType, exists := msgMap["type"]
-		if !exists || msgType != "SIMOBJECT_DATA" {
-			continue
-		}
-
-		// Check if we have parsed data
-		parsedData, exists := msgMap["parsed_data"]
 		if !exists {
 			continue
 		}
 
-		// Cast to SimVarData
-		simVarData, ok := parsedData.(*client.SimVarData)
-		if !ok {
-			continue
-		}
+		// Handle based on message type
+		switch msgType {
+		case "SIMOBJECT_DATA":
+			// Process simulator variable data
+			parsedData, exists := msgMap["parsed_data"]
+			if !exists {
+				continue
+			}
 
-		// Update weather data based on DefineID
-		wc.updateWeatherData(simVarData)
+			// Cast to SimVarData
+			simVarData, ok := parsedData.(*client.SimVarData)
+			if !ok {
+				continue
+			}
+
+			// Update weather data based on DefineID
+			wc.updateWeatherData(simVarData)
+
+		case "EVENT":
+			// Process system events
+			eventData, exists := msgMap["event"]
+			if !exists {
+				continue
+			}
+
+			// Try to cast to EventData
+			if parsedEvent, ok := eventData.(*types.EventData); ok {
+				wc.updateSystemEvents(parsedEvent)
+			}
+		}
 	}
 }
 
@@ -837,6 +868,8 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 		wc.currentWeather.SurfaceType = intValue
 	case INDICATED_SPEED_DEFINE_ID:
 		wc.currentWeather.IndicatedSpeed = floatValue
+	case CAMERA_STATE_DEFINE_ID:
+		wc.currentWeather.CameraState = intValue
 	}
 
 	// Update timestamp
