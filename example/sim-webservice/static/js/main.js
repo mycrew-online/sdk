@@ -202,14 +202,13 @@ function initializeCameraToggle() {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Show default tab
-    showTab('monitor');
-      // Update data every 2 seconds
+    showTab('monitor');    // Update data every second
     updateMonitorData(); // Initial monitor data load
     updateSystemEvents(); // Initial system events load
     
     // Set intervals for updates
-    setInterval(updateMonitorData, 2000);
-    setInterval(updateSystemEvents, 2000);
+    setInterval(updateMonitorData, 1000);
+    setInterval(updateSystemEvents, 1000);
     
     initializeThemeToggle();
     initializeCameraToggle();
