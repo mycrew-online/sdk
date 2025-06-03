@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,13 +11,25 @@ import (
 )
 
 func main() {
+	// Parse command line flags
+	dllPath := flag.String("dll", "", "Path to SimConnect.dll (optional, uses default if not specified)")
+	flag.Parse()
+
 	fmt.Println("✈️ MSFS Sim WebService - Starting...")
 	fmt.Println("   Real-time simulator data monitoring for Microsoft Flight Simulator")
 	fmt.Println("   Open your browser to http://localhost:8080")
 	fmt.Println()
 
-	// Initialize SimConnect weather client
-	weatherClient := simconnect.NewWeatherClient()
+	// Initialize SimConnect weather client with optional DLL path
+	var weatherClient *simconnect.WeatherClient
+	if *dllPath != "" {
+		fmt.Printf("   🔧 Using custom DLL path: %s\n", *dllPath)
+		weatherClient = simconnect.NewWeatherClientWithDLL(*dllPath)
+	} else {
+		fmt.Println("   🔧 Using default DLL path")
+		weatherClient = simconnect.NewWeatherClient()
+	}
+
 	if err := weatherClient.Connect(); err != nil {
 		log.Fatalf("❌ Failed to initialize SimConnect: %v", err)
 	}

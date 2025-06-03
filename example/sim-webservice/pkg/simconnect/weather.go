@@ -92,6 +92,7 @@ type WeatherClient struct {
 	sdk            *client.Engine
 	currentWeather models.FlightData
 	mutex          sync.RWMutex
+	dllPath        string // Store custom DLL path if provided
 }
 
 // NewWeatherClient creates a new weather client
@@ -99,12 +100,23 @@ func NewWeatherClient() *WeatherClient {
 	return &WeatherClient{}
 }
 
+// NewWeatherClientWithDLL creates a new weather client with custom DLL path
+func NewWeatherClientWithDLL(dllPath string) *WeatherClient {
+	return &WeatherClient{
+		dllPath: dllPath,
+	}
+}
+
 // Connect establishes connection to SimConnect and registers variables
 func (wc *WeatherClient) Connect() error {
 	fmt.Println("🔗 Connecting to Microsoft Flight Simulator...")
 
-	// Create new SimConnect client
-	wc.sdk = client.New("SimWebService").(*client.Engine)
+	// Create new SimConnect client with custom DLL path if provided
+	if wc.dllPath != "" {
+		wc.sdk = client.NewWithCustomDLL("SimWebService", wc.dllPath).(*client.Engine)
+	} else {
+		wc.sdk = client.New("SimWebService").(*client.Engine)
+	}
 
 	// Connect to SimConnect
 	if err := wc.sdk.Open(); err != nil {
@@ -297,16 +309,14 @@ func (wc *WeatherClient) Connect() error {
 		return fmt.Errorf("failed to register VERTICAL SPEED: %v", err)
 	}
 
-	// Airport/Navigation Info Variables (Row 4)
-
-	// Nearest Airport
+	// Airport/Navigation Info Variables (Row 4)	// Nearest Airport
 	if err := wc.sdk.RegisterSimVarDefinition(
 		NEAREST_AIRPORT_DEFINE_ID,
-		"ATC RUNWAY AIRPORT NAME",
+		"FACILITY AIRPORT CLOSEST",
 		"",
 		types.SIMCONNECT_DATATYPE_STRINGV,
 	); err != nil {
-		return fmt.Errorf("failed to register ATC RUNWAY AIRPORT NAME: %v", err)
+		return fmt.Errorf("failed to register FACILITY AIRPORT CLOSEST: %v", err)
 	}
 
 	// Distance to Airport
@@ -679,8 +689,8 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 		wc.currentWeather.Heading = floatValue
 	case VERTICAL_SPEED_DEFINE_ID:
 		wc.currentWeather.VerticalSpeed = floatValue
-
-		// Airport/Navigation Info Variables (Row 4)	case NEAREST_AIRPORT_DEFINE_ID:
+	// Airport/Navigation Info Variables (Row 4)
+	case NEAREST_AIRPORT_DEFINE_ID:
 		// For string values, we need special handling
 		if strVal, ok := data.Value.(string); ok {
 			wc.currentWeather.NearestAirport = strVal
