@@ -30,23 +30,23 @@
     </script>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body class="bg-gradient-to-b from-sky-100 to-blue-200 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
-    <div class="container mx-auto px-2 py-4">
+<body class="bg-gradient-to-b from-sky-100 to-blue-200 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">    <div class="container mx-auto px-2 py-4 relative">
+        <!-- Dark/Light Mode Toggle - Top Right -->
+        <button id="themeToggle" class="group absolute top-4 right-4 inline-flex items-center justify-center p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600 z-10">
+            <!-- Light Mode Icon -->
+            <svg class="w-5 h-5 text-yellow-500 dark:hidden transition-transform group-hover:rotate-12" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+            </svg>
+            <!-- Dark Mode Icon -->
+            <svg class="w-5 h-5 text-blue-400 hidden dark:block transition-transform group-hover:-rotate-12" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+        </button>
+        
         <!-- Header -->
         <div class="text-center mb-6">
-            <div class="flex items-center justify-center gap-4 mb-2">
+            <div class="mb-2">
                 <h1 class="text-4xl font-bold text-flight-900 dark:text-flight-50">✈️ MSFS Flight Monitor</h1>
-                <!-- Dark/Light Mode Toggle -->
-                <button id="themeToggle" class="group relative inline-flex items-center justify-center p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-600">
-                    <!-- Light Mode Icon -->
-                    <svg class="w-5 h-5 text-yellow-500 dark:hidden transition-transform group-hover:rotate-12" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
-                    </svg>
-                    <!-- Dark Mode Icon -->
-                    <svg class="w-5 h-5 text-blue-400 hidden dark:block transition-transform group-hover:-rotate-12" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-                    </svg>
-                </button>
             </div>
             <p class="text-flight-700 dark:text-flight-300">Real-time flight data and environmental monitoring from Microsoft Flight Simulator</p>
         </div><!-- Navigation Tabs -->        <div class="w-full mx-auto mb-4">
@@ -73,13 +73,25 @@
                             <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Connected to MSFS</span>
                         </div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            Last Update: <span id="lastUpdate">--:--:--</span>
+                        <div class="flex items-center gap-4">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                Last Update: <span id="lastUpdate">--:--:--</span>
+                            </div>
+                            <!-- Status Info -->
+                            <div class="bg-gradient-to-br from-flight-50 to-flight-100 dark:from-flight-900 dark:to-flight-800 rounded-lg px-3 py-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">📊</span>
+                                    <div class="text-xs font-medium text-flight-700 dark:text-flight-300">
+                                        <div>30 Variables</div>
+                                        <div>Live Updates</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div><!-- Core Weather Cards (Row 1) -->
+                </div>                <!-- Core Weather Cards (Row 1) -->
                 <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌤️ Core Weather</h3>                    <div class="grid grid-cols-4 gap-2">                        <!-- Temperature Card -->
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌤️ Core Weather</h3>                    <div class="grid grid-cols-4 gap-2 mb-2">                        <!-- Temperature Card -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Temperature</h4>
@@ -123,7 +135,54 @@
                             </div>
                         </div>
                     </div>
-                </div>                <!-- Environmental Conditions Cards (Row 2) -->
+
+                    <!-- Time & Simulation Row -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- Zulu Time Card -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Zulu Time</h4>
+                                <span class="text-xl">🌍</span>
+                            </div>
+                            <div class="text-xl font-bold text-flight-900 dark:text-flight-50">
+                                <span id="zuluTime">--:--:--</span>
+                            </div>
+                        </div>
+
+                        <!-- Local Time Card -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Local Time</h4>
+                                <span class="text-xl">🏠</span>
+                            </div>
+                            <div class="text-xl font-bold text-flight-900 dark:text-flight-50">
+                                <span id="localTime">--:--:--</span>
+                            </div>
+                        </div>
+
+                        <!-- Simulation Time Card -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Sim Time</h4>
+                                <span class="text-xl">⏱️</span>
+                            </div>
+                            <div class="text-xl font-bold text-flight-900 dark:text-flight-50">
+                                <span id="simulationTime">--:--:--</span>
+                            </div>
+                        </div>
+
+                        <!-- Simulation Rate Card -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Sim Rate</h4>
+                                <span class="text-xl">⚡</span>
+                            </div>
+                            <div class="text-xl font-bold text-flight-900 dark:text-flight-50">
+                                <span id="simulationRate">--</span><span class="text-base text-gray-500 dark:text-gray-400">x</span>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- Environmental Conditions Cards (Row 2) -->
                 <div class="mb-4">
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌍 Environmental Conditions</h3>                    <div class="grid grid-cols-8 gap-2">                        <!-- Visibility Card -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
@@ -183,9 +242,7 @@
                             <div class="text-lg font-bold text-flight-900 dark:text-flight-50">
                                 <span id="seaLevelPress">--</span><span class="text-sm text-gray-500 dark:text-gray-400">mb</span>
                             </div>
-                        </div>
-
-                        <!-- Air Density Card -->
+                        </div>                        <!-- Air Density Card -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-1">
                                 <h4 class="text-xs font-medium text-gray-600 dark:text-gray-300">Air Density</h4>
@@ -196,15 +253,14 @@
                             </div>
                         </div>
 
-                        <!-- Status Info Card -->
-                        <div class="bg-gradient-to-br from-flight-50 to-flight-100 rounded-lg shadow-lg p-3">
+                        <!-- Realism Card -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-1">
-                                <h4 class="text-xs font-medium text-flight-700">Status</h4>
-                                <span class="text-lg">📊</span>
+                                <h4 class="text-xs font-medium text-gray-600 dark:text-gray-300">Realism</h4>
+                                <span class="text-lg">🎯</span>
                             </div>
-                            <div class="text-xs text-flight-600">
-                                <div>30 Variables</div>
-                                <div>Live Updates</div>
+                            <div class="text-lg font-bold text-flight-900 dark:text-flight-50">
+                                <span id="realism">--</span><span class="text-sm text-gray-500 dark:text-gray-400">%</span>
                             </div>
                         </div>
                     </div>

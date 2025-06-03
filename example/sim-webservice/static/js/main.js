@@ -22,12 +22,17 @@ async function updateWeather() {
     try {
         const response = await fetch('/api/weather');
         const data = await response.json();
-        
-        // Update Core Weather (Row 1)
+          // Update Core Weather (Row 1)
         document.getElementById('temperature').textContent = data.temperature.toFixed(1);
         document.getElementById('pressure').textContent = data.pressure.toFixed(2);
         document.getElementById('windSpeed').textContent = data.windSpeed.toFixed(1);
         document.getElementById('windDirection').textContent = Math.round(data.windDirection);
+        
+        // Update Time & Simulation Variables
+        document.getElementById('zuluTime').textContent = data.zuluTime || '--:--:--';
+        document.getElementById('localTime').textContent = data.localTime || '--:--:--';
+        document.getElementById('simulationTime').textContent = data.simulationTime || '--:--:--';
+        document.getElementById('simulationRate').textContent = data.simulationRate || '--';
         
         // Update Environmental Conditions (Row 2)
         document.getElementById('visibility').textContent = Math.round(data.visibility || 0);
@@ -51,13 +56,14 @@ async function updateWeather() {
         document.getElementById('precipIcon').textContent = precipIcon;
         document.getElementById('precipRate').textContent = (data.precipRate || 0).toFixed(1);
         
-        document.getElementById('densityAltitude').textContent = Math.round(data.densityAltitude || 0);
-        document.getElementById('groundAltitude').textContent = Math.round(data.groundAltitude || 0);
-          // Update Additional Environmental Data
+        document.getElementById('densityAltitude').textContent = Math.round(data.densityAltitude || 0);        document.getElementById('groundAltitude').textContent = Math.round(data.groundAltitude || 0);
+        
+        // Update Additional Environmental Data
         document.getElementById('magVar').textContent = (data.magVar || 0).toFixed(1);
-        document.getElementById('seaLevelPress').textContent = (data.seaLevelPress || 0).toFixed(1);
-        document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
-          // Update Position & Navigation Data (Row 3)
+        document.getElementById('seaLevelPress').textContent = (data.seaLevelPress || 0).toFixed(1);        document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
+        document.getElementById('realism').textContent = (data.realism || 0).toFixed(0);
+        
+        // Update Position & Navigation Data (Row 3)
         const lat = data.latitude || 0;
         const lng = data.longitude || 0;
         
@@ -71,10 +77,10 @@ async function updateWeather() {
         // Update Google Maps links
         if (lat !== 0 && lng !== 0) {
             const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-            document.getElementById('mapsLink').href = mapsUrl;
-            document.getElementById('mapsLink2').href = mapsUrl;
+            document.getElementById('mapsLink').href = mapsUrl;            document.getElementById('mapsLink2').href = mapsUrl;
         }
-          // Update Airport & Navigation Info (Row 4)
+        
+        // Update Airport & Navigation Info (Row 4)
         document.getElementById('nearestAirport').textContent = data.nearestAirport || "--";
         document.getElementById('airportDistance').textContent = Math.round(data.distanceToAirport || 0);
         document.getElementById('comFrequency').textContent = (data.comFrequency || 0).toFixed(3);

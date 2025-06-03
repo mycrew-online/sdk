@@ -8,6 +8,12 @@ type FlightData struct {
 	WindSpeed     float32 `json:"windSpeed"`     // knots
 	WindDirection float32 `json:"windDirection"` // degrees
 
+	// Time & Simulation Variables (Row 1.5 - New)
+	ZuluTime       string  `json:"zuluTime"`       // HH:MM:SS format
+	LocalTime      string  `json:"localTime"`      // HH:MM:SS format
+	SimulationTime string  `json:"simulationTime"` // HH:MM:SS format
+	SimulationRate float32 `json:"simulationRate"` // multiplier (1.0x, 2.0x, etc.)
+
 	// Environmental Conditions (Row 2)
 	Visibility      float32 `json:"visibility"`      // meters
 	PrecipRate      float32 `json:"precipRate"`      // millimeters of water
@@ -17,6 +23,7 @@ type FlightData struct {
 	MagVar          float32 `json:"magVar"`          // degrees
 	SeaLevelPress   float32 `json:"seaLevelPress"`   // millibars
 	AmbientDensity  float32 `json:"ambientDensity"`  // slugs per cubic feet
+	Realism         float32 `json:"realism"`         // percentage
 
 	// Position & Navigation Data (Row 3)
 	Latitude      float32 `json:"latitude"`      // degrees

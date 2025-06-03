@@ -13,12 +13,17 @@ import (
 )
 
 // Constants for SimConnect variable definitions
-const (
-	// Core Weather Variables (Row 1)
+const ( // Core Weather Variables (Row 1)
 	TEMP_DEFINE_ID       = 1
 	PRESSURE_DEFINE_ID   = 2
 	WIND_SPEED_DEFINE_ID = 3
 	WIND_DIR_DEFINE_ID   = 4
+
+	// Time & Simulation Variables (Row 1.5 - New)
+	ZULU_TIME_DEFINE_ID       = 31
+	LOCAL_TIME_DEFINE_ID      = 32
+	SIMULATION_TIME_DEFINE_ID = 33
+	SIMULATION_RATE_DEFINE_ID = 34
 
 	// Environmental Variables (Row 2)
 	VISIBILITY_DEFINE_ID      = 5
@@ -29,6 +34,7 @@ const (
 	MAGVAR_DEFINE_ID          = 10
 	SEA_LEVEL_PRESS_DEFINE_ID = 11
 	AMBIENT_DENSITY_DEFINE_ID = 12
+	REALISM_DEFINE_ID         = 35
 
 	// Position & Navigation Variables (Row 3)
 	LATITUDE_DEFINE_ID       = 13
@@ -45,7 +51,6 @@ const (
 	NAV1_FREQUENCY_DEFINE_ID      = 22
 	GPS_DISTANCE_DEFINE_ID        = 23
 	GPS_ETE_DEFINE_ID             = 24
-
 	// Flight Status Variables (Row 5)
 	ON_GROUND_DEFINE_ID        = 25
 	ON_RUNWAY_DEFINE_ID        = 26
@@ -59,6 +64,10 @@ const (
 	PRESSURE_REQUEST_ID            = 102
 	WIND_SPEED_REQUEST_ID          = 103
 	WIND_DIR_REQUEST_ID            = 104
+	ZULU_TIME_REQUEST_ID           = 131
+	LOCAL_TIME_REQUEST_ID          = 132
+	SIMULATION_TIME_REQUEST_ID     = 133
+	SIMULATION_RATE_REQUEST_ID     = 134
 	VISIBILITY_REQUEST_ID          = 105
 	PRECIP_RATE_REQUEST_ID         = 106
 	PRECIP_STATE_REQUEST_ID        = 107
@@ -67,6 +76,7 @@ const (
 	MAGVAR_REQUEST_ID              = 110
 	SEA_LEVEL_PRESS_REQUEST_ID     = 111
 	AMBIENT_DENSITY_REQUEST_ID     = 112
+	REALISM_REQUEST_ID             = 135
 	LATITUDE_REQUEST_ID            = 113
 	LONGITUDE_REQUEST_ID           = 114
 	ALTITUDE_REQUEST_ID            = 115
@@ -420,7 +430,6 @@ func (wc *WeatherClient) Connect() error {
 	); err != nil {
 		return fmt.Errorf("failed to register SURFACE TYPE: %v", err)
 	}
-
 	// Indicated Airspeed
 	if err := wc.sdk.RegisterSimVarDefinition(
 		INDICATED_SPEED_DEFINE_ID,
@@ -429,6 +438,58 @@ func (wc *WeatherClient) Connect() error {
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
 		return fmt.Errorf("failed to register AIRSPEED INDICATED: %v", err)
+	}
+
+	// Time & Simulation Variables (New Row 1.5)
+
+	// Zulu Time
+	if err := wc.sdk.RegisterSimVarDefinition(
+		ZULU_TIME_DEFINE_ID,
+		"ZULU TIME",
+		"seconds",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register ZULU TIME: %v", err)
+	}
+
+	// Local Time
+	if err := wc.sdk.RegisterSimVarDefinition(
+		LOCAL_TIME_DEFINE_ID,
+		"LOCAL TIME",
+		"seconds",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register LOCAL TIME: %v", err)
+	}
+
+	// Simulation Time
+	if err := wc.sdk.RegisterSimVarDefinition(
+		SIMULATION_TIME_DEFINE_ID,
+		"SIMULATION TIME",
+		"seconds",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register SIMULATION TIME: %v", err)
+	}
+
+	// Simulation Rate
+	if err := wc.sdk.RegisterSimVarDefinition(
+		SIMULATION_RATE_DEFINE_ID,
+		"SIMULATION RATE",
+		"number",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register SIMULATION RATE: %v", err)
+	}
+
+	// Realism (added to Environmental Variables)
+	if err := wc.sdk.RegisterSimVarDefinition(
+		REALISM_DEFINE_ID,
+		"REALISM",
+		"percent",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register REALISM: %v", err)
 	}
 
 	fmt.Println("✅ Flight monitoring variables registered successfully!") // Start periodic data requests
@@ -446,9 +507,25 @@ func (wc *WeatherClient) Connect() error {
 	if err := wc.sdk.RequestSimVarDataPeriodic(WIND_SPEED_DEFINE_ID, WIND_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start wind speed monitoring: %v", err)
 	}
-
 	if err := wc.sdk.RequestSimVarDataPeriodic(WIND_DIR_DEFINE_ID, WIND_DIR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start wind direction monitoring: %v", err)
+	}
+
+	// Time & Simulation Variables (Row 1.5)
+	if err := wc.sdk.RequestSimVarDataPeriodic(ZULU_TIME_DEFINE_ID, ZULU_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start zulu time monitoring: %v", err)
+	}
+
+	if err := wc.sdk.RequestSimVarDataPeriodic(LOCAL_TIME_DEFINE_ID, LOCAL_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start local time monitoring: %v", err)
+	}
+
+	if err := wc.sdk.RequestSimVarDataPeriodic(SIMULATION_TIME_DEFINE_ID, SIMULATION_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start simulation time monitoring: %v", err)
+	}
+
+	if err := wc.sdk.RequestSimVarDataPeriodic(SIMULATION_RATE_DEFINE_ID, SIMULATION_RATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start simulation rate monitoring: %v", err)
 	}
 
 	// Environmental Variables (Row 2)
@@ -475,12 +552,16 @@ func (wc *WeatherClient) Connect() error {
 	if err := wc.sdk.RequestSimVarDataPeriodic(MAGVAR_DEFINE_ID, MAGVAR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start magnetic variation monitoring: %v", err)
 	}
-
 	if err := wc.sdk.RequestSimVarDataPeriodic(SEA_LEVEL_PRESS_DEFINE_ID, SEA_LEVEL_PRESS_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start sea level pressure monitoring: %v", err)
 	}
+
 	if err := wc.sdk.RequestSimVarDataPeriodic(AMBIENT_DENSITY_DEFINE_ID, AMBIENT_DENSITY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start ambient density monitoring: %v", err)
+	}
+
+	if err := wc.sdk.RequestSimVarDataPeriodic(REALISM_DEFINE_ID, REALISM_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start realism monitoring: %v", err)
 	}
 
 	// Position & Navigation Variables (Row 3)
@@ -647,8 +728,7 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 	}
 
 	// Update the appropriate field
-	switch data.DefineID {
-	// Core Weather Variables (Row 1)
+	switch data.DefineID { // Core Weather Variables (Row 1)
 	case TEMP_DEFINE_ID:
 		wc.currentWeather.Temperature = floatValue
 	case PRESSURE_DEFINE_ID:
@@ -657,6 +737,27 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 		wc.currentWeather.WindSpeed = floatValue
 	case WIND_DIR_DEFINE_ID:
 		wc.currentWeather.WindDirection = floatValue
+	// Time & Simulation Variables (Row 1.5)
+	case ZULU_TIME_DEFINE_ID:
+		// Convert seconds to HH:MM:SS format
+		hours := intValue / 3600
+		minutes := (intValue % 3600) / 60
+		seconds := intValue % 60
+		wc.currentWeather.ZuluTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	case LOCAL_TIME_DEFINE_ID:
+		// Convert seconds to HH:MM:SS format
+		hours := intValue / 3600
+		minutes := (intValue % 3600) / 60
+		seconds := intValue % 60
+		wc.currentWeather.LocalTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	case SIMULATION_TIME_DEFINE_ID:
+		// Convert seconds to HH:MM:SS format
+		hours := intValue / 3600
+		minutes := (intValue % 3600) / 60
+		seconds := intValue % 60
+		wc.currentWeather.SimulationTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	case SIMULATION_RATE_DEFINE_ID:
+		wc.currentWeather.SimulationRate = float32(intValue)
 
 	// Environmental Variables (Row 2)
 	case VISIBILITY_DEFINE_ID:
@@ -675,6 +776,8 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 		wc.currentWeather.SeaLevelPress = floatValue
 	case AMBIENT_DENSITY_DEFINE_ID:
 		wc.currentWeather.AmbientDensity = floatValue
+	case REALISM_DEFINE_ID:
+		wc.currentWeather.Realism = float32(intValue)
 
 	// Position & Navigation Variables (Row 3)
 	case LATITUDE_DEFINE_ID:
