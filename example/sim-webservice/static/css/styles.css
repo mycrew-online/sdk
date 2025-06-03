@@ -1,0 +1,14 @@
+/* Tab button styles */
+.tab-button.active {
+    background-color: #0ea5e9;
+    color: white;
+}
+
+.tab-button:not(.active) {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.tab-button:not(.active):hover {
+    background-color: #e5e7eb;
+}

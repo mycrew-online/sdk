@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSFS Sim Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        flight: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            700: '#0369a1',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-gradient-to-b from-sky-100 to-blue-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-flight-900 mb-2">✈️ MSFS Sim Monitor</h1>
+            <p class="text-flight-700">Real-time simulator data from Microsoft Flight Simulator</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="max-w-4xl mx-auto mb-6">
+            <div class="bg-white rounded-lg shadow-lg p-2">
+                <div class="flex space-x-2">
+                    <button id="weatherTab" onclick="showTab('weather')" class="tab-button active flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+                        🌤️ Weather
+                    </button>
+                    <button id="aircraftTab" onclick="showTab('aircraft')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+                        ✈️ Aircraft (Coming Soon)
+                    </button>
+                    <button id="systemsTab" onclick="showTab('systems')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+                        ⚡ Systems (Coming Soon)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Weather Tab -->
+            <div id="weatherContent" class="tab-content">
+                <!-- Status Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                            <span class="text-sm font-medium text-gray-700">Connected to MSFS</span>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Last Update: <span id="lastUpdate">--:--:--</span>
+                        </div>
+                    </div>
+                </div>                <!-- Core Weather Cards (Row 1) -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌤️ Core Weather</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Temperature Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Temperature</h4>
+                                <span class="text-2xl">🌡️</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="temperature">--</span><span class="text-lg text-gray-500">°C</span>
+                            </div>
+                        </div>
+
+                        <!-- Pressure Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Pressure</h4>
+                                <span class="text-2xl">📊</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="pressure">--</span><span class="text-lg text-gray-500">inHg</span>
+                            </div>
+                        </div>
+
+                        <!-- Wind Speed Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Wind Speed</h4>
+                                <span class="text-2xl">💨</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="windSpeed">--</span><span class="text-lg text-gray-500">kts</span>
+                            </div>
+                        </div>
+
+                        <!-- Wind Direction Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Wind Direction</h4>
+                                <span class="text-2xl">🧭</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="windDirection">--</span><span class="text-lg text-gray-500">°</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environmental Conditions Cards (Row 2) -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">🌍 Environmental Conditions</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Visibility Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Visibility</h4>
+                                <span class="text-2xl">👁️</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="visibility">--</span><span class="text-lg text-gray-500">m</span>
+                            </div>
+                        </div>
+
+                        <!-- Precipitation Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Precipitation</h4>
+                                <span class="text-2xl" id="precipIcon">🌦️</span>
+                            </div>
+                            <div class="text-lg font-bold text-flight-900">
+                                <div id="precipType" class="text-sm text-gray-600">--</div>
+                                <span id="precipRate">--</span><span class="text-sm text-gray-500">mm</span>
+                            </div>
+                        </div>
+
+                        <!-- Density Altitude Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Density Alt</h4>
+                                <span class="text-2xl">📏</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="densityAltitude">--</span><span class="text-lg text-gray-500">ft</span>
+                            </div>
+                        </div>
+
+                        <!-- Ground Elevation Card -->
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-600">Ground Elev</h4>
+                                <span class="text-2xl">⛰️</span>
+                            </div>
+                            <div class="text-2xl font-bold text-flight-900">
+                                <span id="groundAltitude">--</span><span class="text-lg text-gray-500">m</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Environmental Data -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Magnetic Variation Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-medium text-gray-600">Mag Variation</h4>
+                            <span class="text-2xl">🧲</span>
+                        </div>
+                        <div class="text-2xl font-bold text-flight-900">
+                            <span id="magVar">--</span><span class="text-lg text-gray-500">°</span>
+                        </div>
+                    </div>
+
+                    <!-- Sea Level Pressure Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-medium text-gray-600">Sea Level Press</h4>
+                            <span class="text-2xl">🌊</span>
+                        </div>
+                        <div class="text-2xl font-bold text-flight-900">
+                            <span id="seaLevelPress">--</span><span class="text-lg text-gray-500">mb</span>
+                        </div>
+                    </div>
+
+                    <!-- Air Density Card -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-medium text-gray-600">Air Density</h4>
+                            <span class="text-2xl">💨</span>
+                        </div>
+                        <div class="text-xl font-bold text-flight-900">
+                            <span id="ambientDensity">--</span><span class="text-sm text-gray-500">slugs/ft³</span>
+                        </div>
+                    </div>
+
+                    <!-- Status Info Card -->
+                    <div class="bg-gradient-to-br from-flight-50 to-flight-100 rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-medium text-flight-700">Status</h4>
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <div class="text-sm text-flight-600">
+                            <div>12 Variables</div>
+                            <div>Live Updates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aircraft Tab (Placeholder) -->
+            <div id="aircraftContent" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">✈️ Aircraft Data</h3>
+                    <p class="text-gray-500">Aircraft monitoring will be added in the next phase</p>
+                </div>
+            </div>
+
+            <!-- Systems Tab (Placeholder) -->
+            <div id="systemsContent" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">⚡ Aircraft Systems</h3>
+                    <p class="text-gray-500">Systems monitoring will be added in the next phase</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
