@@ -13,7 +13,7 @@ import (
 )
 
 // Constants for SimConnect variable definitions
-const ( // Core Weather Variables (Row 1)
+const ( // Core Environmental Variables (Row 1)
 	TEMP_DEFINE_ID       = 1
 	PRESSURE_DEFINE_ID   = 2
 	WIND_SPEED_DEFINE_ID = 3
@@ -104,49 +104,48 @@ const ( // Core Weather Variables (Row 1)
 	CAMERA_STATE_REQUEST_ID = 136
 )
 
-// WeatherClient handles SimConnect communication for flight data
-type WeatherClient struct {
-	sdk            *client.Engine
-	currentWeather models.FlightData
-	systemEvents   SystemEvents
-	mutex          sync.RWMutex
-	dllPath        string // Store custom DLL path if provided
+// MonitorClient handles SimConnect communication for flight data
+type MonitorClient struct {
+	sdk          *client.Engine
+	currentData  models.FlightData
+	systemEvents SystemEvents
+	mutex        sync.RWMutex
+	dllPath      string // Store custom DLL path if provided
 }
 
-// NewWeatherClient creates a new weather client
-func NewWeatherClient() *WeatherClient {
-	return &WeatherClient{}
+// NewMonitorClient creates a new monitor client
+func NewMonitorClient() *MonitorClient {
+	return &MonitorClient{}
 }
 
-// NewWeatherClientWithDLL creates a new weather client with custom DLL path
-func NewWeatherClientWithDLL(dllPath string) *WeatherClient {
-	return &WeatherClient{
+// NewMonitorClientWithDLL creates a new monitor client with custom DLL path
+func NewMonitorClientWithDLL(dllPath string) *MonitorClient {
+	return &MonitorClient{
 		dllPath: dllPath,
 	}
 }
 
 // Connect establishes connection to SimConnect and registers variables
-func (wc *WeatherClient) Connect() error {
+func (mc *MonitorClient) Connect() error {
 	fmt.Println("🔗 Connecting to Microsoft Flight Simulator...")
 
 	// Create new SimConnect client with custom DLL path if provided
-	if wc.dllPath != "" {
-		wc.sdk = client.NewWithCustomDLL("SimWebService", wc.dllPath).(*client.Engine)
+	if mc.dllPath != "" {
+		mc.sdk = client.NewWithCustomDLL("SimWebService", mc.dllPath).(*client.Engine)
 	} else {
-		wc.sdk = client.New("SimWebService").(*client.Engine)
+		mc.sdk = client.New("SimWebService").(*client.Engine)
 	}
 
 	// Connect to SimConnect
-	if err := wc.sdk.Open(); err != nil {
+	if err := mc.sdk.Open(); err != nil {
 		return fmt.Errorf("failed to connect to SimConnect: %v", err)
 	}
 	fmt.Println("✅ Connected to Microsoft Flight Simulator!")
-
-	// Register weather variables
-	fmt.Println("📝 Registering weather variables...")
+	// Register environmental variables
+	fmt.Println("📝 Registering environmental variables...")
 
 	// Ambient Temperature
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		TEMP_DEFINE_ID,
 		"AMBIENT TEMPERATURE",
 		"Celsius",
@@ -156,7 +155,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Ambient Pressure
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		PRESSURE_DEFINE_ID,
 		"AMBIENT PRESSURE",
 		"Inches of mercury",
@@ -166,7 +165,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Wind Speed
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		WIND_SPEED_DEFINE_ID,
 		"AMBIENT WIND VELOCITY",
 		"Knots",
@@ -175,7 +174,7 @@ func (wc *WeatherClient) Connect() error {
 		return fmt.Errorf("failed to register AMBIENT WIND VELOCITY: %v", err)
 	}
 	// Wind Direction
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		WIND_DIR_DEFINE_ID,
 		"AMBIENT WIND DIRECTION",
 		"Degrees",
@@ -187,7 +186,7 @@ func (wc *WeatherClient) Connect() error {
 	// Environmental Variables (Row 2)
 
 	// Ambient Visibility
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		VISIBILITY_DEFINE_ID,
 		"AMBIENT VISIBILITY",
 		"Meters",
@@ -197,7 +196,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Precipitation Rate
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		PRECIP_RATE_DEFINE_ID,
 		"AMBIENT PRECIP RATE",
 		"millimeters of water",
@@ -207,7 +206,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Precipitation State
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		PRECIP_STATE_DEFINE_ID,
 		"AMBIENT PRECIP STATE",
 		"Mask",
@@ -217,7 +216,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Density Altitude
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		DENSITY_ALT_DEFINE_ID,
 		"DENSITY ALTITUDE",
 		"ft",
@@ -227,7 +226,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Ground Altitude
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		GROUND_ALT_DEFINE_ID,
 		"GROUND ALTITUDE",
 		"Meters",
@@ -237,7 +236,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Magnetic Variation
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		MAGVAR_DEFINE_ID,
 		"MAGVAR",
 		"Degrees",
@@ -247,7 +246,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Sea Level Pressure
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		SEA_LEVEL_PRESS_DEFINE_ID,
 		"SEA LEVEL PRESSURE",
 		"Millibars",
@@ -256,7 +255,7 @@ func (wc *WeatherClient) Connect() error {
 		return fmt.Errorf("failed to register SEA LEVEL PRESSURE: %v", err)
 	}
 	// Ambient Density
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		AMBIENT_DENSITY_DEFINE_ID,
 		"AMBIENT DENSITY",
 		"Slugs per cubic feet",
@@ -268,7 +267,7 @@ func (wc *WeatherClient) Connect() error {
 	// Position & Navigation Variables (Row 3)
 
 	// Aircraft Latitude
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		LATITUDE_DEFINE_ID,
 		"PLANE LATITUDE",
 		"degrees",
@@ -278,7 +277,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Aircraft Longitude
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		LONGITUDE_DEFINE_ID,
 		"PLANE LONGITUDE",
 		"degrees",
@@ -288,7 +287,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Aircraft Altitude
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		ALTITUDE_DEFINE_ID,
 		"PLANE ALTITUDE",
 		"feet",
@@ -298,7 +297,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Ground Speed
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		GROUND_SPEED_DEFINE_ID,
 		"GROUND VELOCITY",
 		"knots",
@@ -308,7 +307,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// True Heading
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		HEADING_DEFINE_ID,
 		"PLANE HEADING DEGREES TRUE",
 		"degrees",
@@ -318,7 +317,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Vertical Speed
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		VERTICAL_SPEED_DEFINE_ID,
 		"VERTICAL SPEED",
 		"feet per second",
@@ -328,7 +327,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Airport/Navigation Info Variables (Row 4)	// Nearest Airport
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		NEAREST_AIRPORT_DEFINE_ID,
 		"FACILITY AIRPORT CLOSEST",
 		"",
@@ -338,7 +337,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Distance to Airport
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		DISTANCE_TO_AIRPORT_DEFINE_ID,
 		"ATC RUNWAY DISTANCE",
 		"meters",
@@ -348,7 +347,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// COM1 Frequency
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		COM_FREQUENCY_DEFINE_ID,
 		"COM ACTIVE FREQUENCY:1",
 		"MHz",
@@ -358,7 +357,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// NAV1 Frequency
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		NAV1_FREQUENCY_DEFINE_ID,
 		"NAV ACTIVE FREQUENCY:1",
 		"MHz",
@@ -368,7 +367,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// GPS Distance to Waypoint
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		GPS_DISTANCE_DEFINE_ID,
 		"GPS WP DISTANCE",
 		"meters",
@@ -378,7 +377,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// GPS ETE (Estimated Time Enroute)
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		GPS_ETE_DEFINE_ID,
 		"GPS WP ETE",
 		"seconds",
@@ -390,7 +389,7 @@ func (wc *WeatherClient) Connect() error {
 	// Flight Status Variables (Row 5)
 
 	// On Ground Status
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		ON_GROUND_DEFINE_ID,
 		"SIM ON GROUND",
 		"Bool",
@@ -400,7 +399,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// On Runway Status
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		ON_RUNWAY_DEFINE_ID,
 		"ON ANY RUNWAY",
 		"Bool",
@@ -410,7 +409,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// GPS Flight Plan Active
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		GPS_ACTIVE_DEFINE_ID,
 		"GPS IS ACTIVE FLIGHT PLAN",
 		"Bool",
@@ -420,7 +419,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Autopilot Master
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		AUTOPILOT_MASTER_DEFINE_ID,
 		"AUTOPILOT MASTER",
 		"Bool",
@@ -430,7 +429,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Surface Type
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		SURFACE_TYPE_DEFINE_ID,
 		"SURFACE TYPE",
 		"Enum",
@@ -439,7 +438,7 @@ func (wc *WeatherClient) Connect() error {
 		return fmt.Errorf("failed to register SURFACE TYPE: %v", err)
 	}
 	// Indicated Airspeed
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		INDICATED_SPEED_DEFINE_ID,
 		"AIRSPEED INDICATED",
 		"knots",
@@ -451,7 +450,7 @@ func (wc *WeatherClient) Connect() error {
 	// Time & Simulation Variables (New Row 1.5)
 
 	// Zulu Time
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		ZULU_TIME_DEFINE_ID,
 		"ZULU TIME",
 		"seconds",
@@ -461,7 +460,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Local Time
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		LOCAL_TIME_DEFINE_ID,
 		"LOCAL TIME",
 		"seconds",
@@ -471,7 +470,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Simulation Time
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		SIMULATION_TIME_DEFINE_ID,
 		"SIMULATION TIME",
 		"seconds",
@@ -481,7 +480,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Simulation Rate
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		SIMULATION_RATE_DEFINE_ID,
 		"SIMULATION RATE",
 		"number",
@@ -491,7 +490,7 @@ func (wc *WeatherClient) Connect() error {
 	}
 
 	// Realism (added to Environmental Variables)
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		REALISM_DEFINE_ID,
 		"REALISM",
 		"percent",
@@ -503,191 +502,191 @@ func (wc *WeatherClient) Connect() error {
 	fmt.Println("✅ Flight monitoring variables registered successfully!") // Start periodic data requests
 	fmt.Println("⏰ Starting periodic flight monitoring (every second)...")
 
-	// Core Weather Variables (Row 1)
-	if err := wc.sdk.RequestSimVarDataPeriodic(TEMP_DEFINE_ID, TEMP_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	// Core Environmental Variables (Row 1)
+	if err := mc.sdk.RequestSimVarDataPeriodic(TEMP_DEFINE_ID, TEMP_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start temperature monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(PRESSURE_DEFINE_ID, PRESSURE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(PRESSURE_DEFINE_ID, PRESSURE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start pressure monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(WIND_SPEED_DEFINE_ID, WIND_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(WIND_SPEED_DEFINE_ID, WIND_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start wind speed monitoring: %v", err)
 	}
-	if err := wc.sdk.RequestSimVarDataPeriodic(WIND_DIR_DEFINE_ID, WIND_DIR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(WIND_DIR_DEFINE_ID, WIND_DIR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start wind direction monitoring: %v", err)
 	}
 
 	// Time & Simulation Variables (Row 1.5)
-	if err := wc.sdk.RequestSimVarDataPeriodic(ZULU_TIME_DEFINE_ID, ZULU_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(ZULU_TIME_DEFINE_ID, ZULU_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start zulu time monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(LOCAL_TIME_DEFINE_ID, LOCAL_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(LOCAL_TIME_DEFINE_ID, LOCAL_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start local time monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(SIMULATION_TIME_DEFINE_ID, SIMULATION_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(SIMULATION_TIME_DEFINE_ID, SIMULATION_TIME_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start simulation time monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(SIMULATION_RATE_DEFINE_ID, SIMULATION_RATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(SIMULATION_RATE_DEFINE_ID, SIMULATION_RATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start simulation rate monitoring: %v", err)
 	}
 
 	// Environmental Variables (Row 2)
-	if err := wc.sdk.RequestSimVarDataPeriodic(VISIBILITY_DEFINE_ID, VISIBILITY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(VISIBILITY_DEFINE_ID, VISIBILITY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start visibility monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(PRECIP_RATE_DEFINE_ID, PRECIP_RATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(PRECIP_RATE_DEFINE_ID, PRECIP_RATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start precipitation rate monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(PRECIP_STATE_DEFINE_ID, PRECIP_STATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(PRECIP_STATE_DEFINE_ID, PRECIP_STATE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start precipitation state monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(DENSITY_ALT_DEFINE_ID, DENSITY_ALT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(DENSITY_ALT_DEFINE_ID, DENSITY_ALT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start density altitude monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(GROUND_ALT_DEFINE_ID, GROUND_ALT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(GROUND_ALT_DEFINE_ID, GROUND_ALT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start ground altitude monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(MAGVAR_DEFINE_ID, MAGVAR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(MAGVAR_DEFINE_ID, MAGVAR_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start magnetic variation monitoring: %v", err)
 	}
-	if err := wc.sdk.RequestSimVarDataPeriodic(SEA_LEVEL_PRESS_DEFINE_ID, SEA_LEVEL_PRESS_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(SEA_LEVEL_PRESS_DEFINE_ID, SEA_LEVEL_PRESS_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start sea level pressure monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(AMBIENT_DENSITY_DEFINE_ID, AMBIENT_DENSITY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(AMBIENT_DENSITY_DEFINE_ID, AMBIENT_DENSITY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start ambient density monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(REALISM_DEFINE_ID, REALISM_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(REALISM_DEFINE_ID, REALISM_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start realism monitoring: %v", err)
 	}
 
 	// Position & Navigation Variables (Row 3)
-	if err := wc.sdk.RequestSimVarDataPeriodic(LATITUDE_DEFINE_ID, LATITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(LATITUDE_DEFINE_ID, LATITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start latitude monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(LONGITUDE_DEFINE_ID, LONGITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(LONGITUDE_DEFINE_ID, LONGITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start longitude monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(ALTITUDE_DEFINE_ID, ALTITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(ALTITUDE_DEFINE_ID, ALTITUDE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start altitude monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(GROUND_SPEED_DEFINE_ID, GROUND_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(GROUND_SPEED_DEFINE_ID, GROUND_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start ground speed monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(HEADING_DEFINE_ID, HEADING_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(HEADING_DEFINE_ID, HEADING_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start heading monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(VERTICAL_SPEED_DEFINE_ID, VERTICAL_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(VERTICAL_SPEED_DEFINE_ID, VERTICAL_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start vertical speed monitoring: %v", err)
 	}
 
 	// Airport/Navigation Info Variables (Row 4)
-	if err := wc.sdk.RequestSimVarDataPeriodic(NEAREST_AIRPORT_DEFINE_ID, NEAREST_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(NEAREST_AIRPORT_DEFINE_ID, NEAREST_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start nearest airport monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(DISTANCE_TO_AIRPORT_DEFINE_ID, DISTANCE_TO_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(DISTANCE_TO_AIRPORT_DEFINE_ID, DISTANCE_TO_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start distance to airport monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(COM_FREQUENCY_DEFINE_ID, COM_FREQUENCY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(COM_FREQUENCY_DEFINE_ID, COM_FREQUENCY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start COM frequency monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(NAV1_FREQUENCY_DEFINE_ID, NAV1_FREQUENCY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(NAV1_FREQUENCY_DEFINE_ID, NAV1_FREQUENCY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start NAV1 frequency monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(GPS_DISTANCE_DEFINE_ID, GPS_DISTANCE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(GPS_DISTANCE_DEFINE_ID, GPS_DISTANCE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start GPS distance monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(GPS_ETE_DEFINE_ID, GPS_ETE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(GPS_ETE_DEFINE_ID, GPS_ETE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start GPS ETE monitoring: %v", err)
 	}
 
 	// Flight Status Variables (Row 5)
-	if err := wc.sdk.RequestSimVarDataPeriodic(ON_GROUND_DEFINE_ID, ON_GROUND_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(ON_GROUND_DEFINE_ID, ON_GROUND_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start on ground monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(ON_RUNWAY_DEFINE_ID, ON_RUNWAY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(ON_RUNWAY_DEFINE_ID, ON_RUNWAY_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start on runway monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(GPS_ACTIVE_DEFINE_ID, GPS_ACTIVE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(GPS_ACTIVE_DEFINE_ID, GPS_ACTIVE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start GPS active monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(AUTOPILOT_MASTER_DEFINE_ID, AUTOPILOT_MASTER_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(AUTOPILOT_MASTER_DEFINE_ID, AUTOPILOT_MASTER_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start autopilot master monitoring: %v", err)
 	}
 
-	if err := wc.sdk.RequestSimVarDataPeriodic(SURFACE_TYPE_DEFINE_ID, SURFACE_TYPE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(SURFACE_TYPE_DEFINE_ID, SURFACE_TYPE_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start surface type monitoring: %v", err)
 	}
-	if err := wc.sdk.RequestSimVarDataPeriodic(INDICATED_SPEED_DEFINE_ID, INDICATED_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+	if err := mc.sdk.RequestSimVarDataPeriodic(INDICATED_SPEED_DEFINE_ID, INDICATED_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start indicated speed monitoring: %v", err)
 	}
 	// Register Camera State
-	if err := wc.RegisterCameraState(); err != nil {
+	if err := mc.RegisterCameraState(); err != nil {
 		return fmt.Errorf("failed to register camera state: %v", err)
 	}
 
 	// Register System Events
-	if err := wc.RegisterSystemEvents(); err != nil {
+	if err := mc.RegisterSystemEvents(); err != nil {
 		return fmt.Errorf("failed to register system events: %v", err)
 	}
 
 	fmt.Println("✅ Periodic flight monitoring started!")
 
 	// Start message processing in background
-	go wc.processSimConnectMessages()
+	go mc.processSimConnectMessages()
 
 	return nil
 }
 
-// GetCurrentWeather returns the current weather data
-func (wc *WeatherClient) GetCurrentWeather() models.WeatherData {
-	wc.mutex.RLock()
-	defer wc.mutex.RUnlock()
-	return wc.currentWeather
+// GetCurrentData returns the current monitor data
+func (mc *MonitorClient) GetCurrentData() models.FlightData {
+	mc.mutex.RLock()
+	defer mc.mutex.RUnlock()
+	return mc.currentData
 }
 
-// SetWeatherPreset applies a weather preset (placeholder for future implementation)
-func (wc *WeatherClient) SetWeatherPreset(preset models.WeatherPreset) error {
-	log.Printf("🌤️ Applying weather preset: %+v", preset)
-	// TODO: Implement actual weather setting via SimConnect
-	// This would require using different SimConnect APIs for weather control
+// SetMonitorPreset applies a monitor preset (placeholder for future implementation)
+func (mc *MonitorClient) SetMonitorPreset(preset models.MonitorPreset) error {
+	log.Printf("🌤️ Applying monitor preset: %+v", preset)
+	// TODO: Implement actual monitor setting via SimConnect
+	// This would require using different SimConnect APIs for monitor control
 	return nil
 }
 
 // Close closes the SimConnect connection
-func (wc *WeatherClient) Close() error {
-	if wc.sdk != nil {
-		return wc.sdk.Close()
+func (mc *MonitorClient) Close() error {
+	if mc.sdk != nil {
+		return mc.sdk.Close()
 	}
 	return nil
 }
 
-func (wc *WeatherClient) processSimConnectMessages() {
-	messages := wc.sdk.Listen()
+func (mc *MonitorClient) processSimConnectMessages() {
+	messages := mc.sdk.Listen()
 	if messages == nil {
 		log.Fatal("❌ Failed to start listening for SimConnect messages")
 	}
@@ -716,10 +715,8 @@ func (wc *WeatherClient) processSimConnectMessages() {
 			simVarData, ok := parsedData.(*client.SimVarData)
 			if !ok {
 				continue
-			}
-
-			// Update weather data based on DefineID
-			wc.updateWeatherData(simVarData)
+			} // Update monitor data based on DefineID
+			mc.updateMonitorData(simVarData)
 
 		case "EVENT":
 			// Process system events
@@ -730,15 +727,15 @@ func (wc *WeatherClient) processSimConnectMessages() {
 
 			// Try to cast to EventData
 			if parsedEvent, ok := eventData.(*types.EventData); ok {
-				wc.updateSystemEvents(parsedEvent)
+				mc.updateSystemEvents(parsedEvent)
 			}
 		}
 	}
 }
 
-func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
-	wc.mutex.Lock()
-	defer wc.mutex.Unlock()
+func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
 
 	// Handle different data types
 	var floatValue float32
@@ -759,119 +756,119 @@ func (wc *WeatherClient) updateWeatherData(data *client.SimVarData) {
 	}
 
 	// Update the appropriate field
-	switch data.DefineID { // Core Weather Variables (Row 1)
+	switch data.DefineID { // Core Environmental Variables (Row 1)
 	case TEMP_DEFINE_ID:
-		wc.currentWeather.Temperature = floatValue
+		mc.currentData.Temperature = floatValue
 	case PRESSURE_DEFINE_ID:
-		wc.currentWeather.Pressure = floatValue
+		mc.currentData.Pressure = floatValue
 	case WIND_SPEED_DEFINE_ID:
-		wc.currentWeather.WindSpeed = floatValue
+		mc.currentData.WindSpeed = floatValue
 	case WIND_DIR_DEFINE_ID:
-		wc.currentWeather.WindDirection = floatValue
+		mc.currentData.WindDirection = floatValue
 	// Time & Simulation Variables (Row 1.5)
 	case ZULU_TIME_DEFINE_ID:
 		// Convert seconds to HH:MM:SS format
 		hours := intValue / 3600
 		minutes := (intValue % 3600) / 60
 		seconds := intValue % 60
-		wc.currentWeather.ZuluTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+		mc.currentData.ZuluTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 	case LOCAL_TIME_DEFINE_ID:
 		// Convert seconds to HH:MM:SS format
 		hours := intValue / 3600
 		minutes := (intValue % 3600) / 60
 		seconds := intValue % 60
-		wc.currentWeather.LocalTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+		mc.currentData.LocalTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 	case SIMULATION_TIME_DEFINE_ID:
 		// Convert seconds to HH:MM:SS format
 		hours := intValue / 3600
 		minutes := (intValue % 3600) / 60
 		seconds := intValue % 60
-		wc.currentWeather.SimulationTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+		mc.currentData.SimulationTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 	case SIMULATION_RATE_DEFINE_ID:
-		wc.currentWeather.SimulationRate = float32(intValue)
+		mc.currentData.SimulationRate = float32(intValue)
 
 	// Environmental Variables (Row 2)
 	case VISIBILITY_DEFINE_ID:
-		wc.currentWeather.Visibility = floatValue
+		mc.currentData.Visibility = floatValue
 	case PRECIP_RATE_DEFINE_ID:
-		wc.currentWeather.PrecipRate = floatValue
+		mc.currentData.PrecipRate = floatValue
 	case PRECIP_STATE_DEFINE_ID:
-		wc.currentWeather.PrecipState = intValue
+		mc.currentData.PrecipState = intValue
 	case DENSITY_ALT_DEFINE_ID:
-		wc.currentWeather.DensityAltitude = floatValue
+		mc.currentData.DensityAltitude = floatValue
 	case GROUND_ALT_DEFINE_ID:
-		wc.currentWeather.GroundAltitude = floatValue
+		mc.currentData.GroundAltitude = floatValue
 	case MAGVAR_DEFINE_ID:
-		wc.currentWeather.MagVar = floatValue
+		mc.currentData.MagVar = floatValue
 	case SEA_LEVEL_PRESS_DEFINE_ID:
-		wc.currentWeather.SeaLevelPress = floatValue
+		mc.currentData.SeaLevelPress = floatValue
 	case AMBIENT_DENSITY_DEFINE_ID:
-		wc.currentWeather.AmbientDensity = floatValue
+		mc.currentData.AmbientDensity = floatValue
 	case REALISM_DEFINE_ID:
-		wc.currentWeather.Realism = float32(intValue)
+		mc.currentData.Realism = float32(intValue)
 
 	// Position & Navigation Variables (Row 3)
 	case LATITUDE_DEFINE_ID:
-		wc.currentWeather.Latitude = floatValue
+		mc.currentData.Latitude = floatValue
 	case LONGITUDE_DEFINE_ID:
-		wc.currentWeather.Longitude = floatValue
+		mc.currentData.Longitude = floatValue
 	case ALTITUDE_DEFINE_ID:
-		wc.currentWeather.Altitude = floatValue
+		mc.currentData.Altitude = floatValue
 	case GROUND_SPEED_DEFINE_ID:
-		wc.currentWeather.GroundSpeed = floatValue
+		mc.currentData.GroundSpeed = floatValue
 	case HEADING_DEFINE_ID:
-		wc.currentWeather.Heading = floatValue
+		mc.currentData.Heading = floatValue
 	case VERTICAL_SPEED_DEFINE_ID:
-		wc.currentWeather.VerticalSpeed = floatValue
+		mc.currentData.VerticalSpeed = floatValue
 	// Airport/Navigation Info Variables (Row 4)
 	case NEAREST_AIRPORT_DEFINE_ID:
 		// For string values, we need special handling
 		if strVal, ok := data.Value.(string); ok {
-			wc.currentWeather.NearestAirport = strVal
+			mc.currentData.NearestAirport = strVal
 		}
 	case DISTANCE_TO_AIRPORT_DEFINE_ID:
-		wc.currentWeather.DistanceToAirport = floatValue
+		mc.currentData.DistanceToAirport = floatValue
 	case COM_FREQUENCY_DEFINE_ID:
-		wc.currentWeather.ComFrequency = floatValue
+		mc.currentData.ComFrequency = floatValue
 	case NAV1_FREQUENCY_DEFINE_ID:
-		wc.currentWeather.Nav1Frequency = floatValue
+		mc.currentData.Nav1Frequency = floatValue
 	case GPS_DISTANCE_DEFINE_ID:
-		wc.currentWeather.GpsDistance = floatValue
+		mc.currentData.GpsDistance = floatValue
 	case GPS_ETE_DEFINE_ID:
-		wc.currentWeather.GpsEte = floatValue
+		mc.currentData.GpsEte = floatValue
 	// Flight Status Variables (Row 5)
 	case ON_GROUND_DEFINE_ID:
 		if intValue != 0 {
-			wc.currentWeather.OnGround = 1
+			mc.currentData.OnGround = 1
 		} else {
-			wc.currentWeather.OnGround = 0
+			mc.currentData.OnGround = 0
 		}
 	case ON_RUNWAY_DEFINE_ID:
 		if intValue != 0 {
-			wc.currentWeather.OnRunway = 1
+			mc.currentData.OnRunway = 1
 		} else {
-			wc.currentWeather.OnRunway = 0
+			mc.currentData.OnRunway = 0
 		}
 	case GPS_ACTIVE_DEFINE_ID:
 		if intValue != 0 {
-			wc.currentWeather.GpsActive = 1
+			mc.currentData.GpsActive = 1
 		} else {
-			wc.currentWeather.GpsActive = 0
+			mc.currentData.GpsActive = 0
 		}
 	case AUTOPILOT_MASTER_DEFINE_ID:
 		if intValue != 0 {
-			wc.currentWeather.AutopilotMaster = 1
+			mc.currentData.AutopilotMaster = 1
 		} else {
-			wc.currentWeather.AutopilotMaster = 0
+			mc.currentData.AutopilotMaster = 0
 		}
 	case SURFACE_TYPE_DEFINE_ID:
-		wc.currentWeather.SurfaceType = intValue
+		mc.currentData.SurfaceType = intValue
 	case INDICATED_SPEED_DEFINE_ID:
-		wc.currentWeather.IndicatedSpeed = floatValue
+		mc.currentData.IndicatedSpeed = floatValue
 	case CAMERA_STATE_DEFINE_ID:
-		wc.currentWeather.CameraState = intValue
+		mc.currentData.CameraState = intValue
 	}
 
 	// Update timestamp
-	wc.currentWeather.LastUpdate = time.Now().Format("15:04:05")
+	mc.currentData.LastUpdate = time.Now().Format("15:04:05")
 }

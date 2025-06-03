@@ -2,7 +2,7 @@ package models
 
 // FlightData holds comprehensive flight monitoring information
 type FlightData struct {
-	// Core Weather (Row 1)
+	// Core Environmental Data (Row 1)
 	Temperature   float32 `json:"temperature"`   // Celsius
 	Pressure      float32 `json:"pressure"`      // inHg
 	WindSpeed     float32 `json:"windSpeed"`     // knots
@@ -51,18 +51,11 @@ type FlightData struct {
 
 	// Camera State
 	CameraState uint32 `json:"cameraState"` // enum: 2=Cockpit, 3=External/Chase, 4=Drone, etc.
-
-	LastUpdate string `json:"lastUpdate"`
+	LastUpdate  string `json:"lastUpdate"`
 }
 
-// WeatherData is an alias for backward compatibility
-type WeatherData = FlightData
-
-// EnvironmentalData is an alias for backward compatibility
-type EnvironmentalData = FlightData
-
-// WeatherPreset represents a weather configuration
-type WeatherPreset struct {
+// MonitorPreset represents a monitor configuration
+type MonitorPreset struct {
 	Name          string  `json:"name"`
 	Temperature   float32 `json:"temperature"`
 	Pressure      float32 `json:"pressure"`

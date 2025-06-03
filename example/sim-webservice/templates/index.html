@@ -58,9 +58,8 @@
             </div>
             <p class="text-flight-700 dark:text-flight-300">Real-time flight data and environmental monitoring from Microsoft Flight Simulator</p>
         </div><!-- Navigation Tabs -->        <div class="w-full mx-auto mb-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">
-                <div class="flex space-x-2">
-                    <button id="weatherTab" onclick="showTab('weather')" class="tab-button active flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2">                <div class="flex space-x-2">
+                    <button id="monitorTab" onclick="showTab('monitor')" class="tab-button active flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
                         ✈️ Flight Monitor
                     </button>
                     <button id="aircraftTab" onclick="showTab('aircraft')" class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors">
@@ -71,10 +70,9 @@
                     </button>
                 </div>
             </div>
-        </div><!-- Tab Content -->
-        <div class="w-full mx-auto">
-            <!-- Weather Tab -->
-            <div id="weatherContent" class="tab-content">                <!-- Status Card -->
+        </div><!-- Tab Content -->        <div class="w-full mx-auto">
+            <!-- Monitor Tab -->
+            <div id="monitorContent" class="tab-content"><!-- Status Card -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
@@ -124,9 +122,9 @@
                             <div id="lastEventTime" class="text-lg font-bold text-flight-700 dark:text-flight-300">--:--:--</div>
                         </div>
                     </div>
-                </div><!-- Core Weather Cards (Row 1) -->
+                </div><!-- Core Environmental Data Cards (Row 1) -->
                 <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌤️ Core Weather</h3>                    <div class="grid grid-cols-4 gap-2 mb-2">                        <!-- Temperature Card -->
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">🌤️ Environmental Data</h3>                    <div class="grid grid-cols-4 gap-2 mb-2">                        <!-- Temperature Card -->
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300">Temperature</h4>

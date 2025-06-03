@@ -17,12 +17,12 @@ function showTab(tabName) {
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
 
-// Fetch environmental data from API
-async function updateWeather() {
+// Fetch monitor data from API
+async function updateMonitorData() {
     try {
-        const response = await fetch('/api/weather');
+        const response = await fetch('/api/monitor');
         const data = await response.json();
-          // Update Core Weather (Row 1)
+          // Update Core Environmental Data (Row 1)
         document.getElementById('temperature').textContent = data.temperature.toFixed(1);
         document.getElementById('pressure').textContent = data.pressure.toFixed(2);
         document.getElementById('windSpeed').textContent = data.windSpeed.toFixed(1);
@@ -158,9 +158,8 @@ function initializeCameraToggle() {
     const cameraToggle = document.getElementById('cameraToggle');
     
     if (cameraToggle) {
-        cameraToggle.addEventListener('click', async function() {
-            // Get current camera state
-            const response = await fetch('/api/weather');
+        cameraToggle.addEventListener('click', async function() {            // Get current camera state
+            const response = await fetch('/api/monitor');
             const data = await response.json();
             let currentState = data.cameraState || 2; // Default to cockpit view (2) if not available
             
@@ -203,14 +202,13 @@ function initializeCameraToggle() {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Show default tab
-    showTab('weather');
-    
-    // Update data every 2 seconds
-    updateWeather(); // Initial weather load
+    showTab('monitor');
+      // Update data every 2 seconds
+    updateMonitorData(); // Initial monitor data load
     updateSystemEvents(); // Initial system events load
     
     // Set intervals for updates
-    setInterval(updateWeather, 2000);
+    setInterval(updateMonitorData, 2000);
     setInterval(updateSystemEvents, 2000);
     
     initializeThemeToggle();

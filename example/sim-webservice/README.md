@@ -1,14 +1,14 @@
-# Weather WebService Demo
+# Flight Monitor WebService Demo
 
-A real-time web interface for monitoring and controlling Microsoft Flight Simulator weather conditions using the SimConnect SDK.
+A real-time web interface for monitoring and controlling Microsoft Flight Simulator flight data using the SimConnect SDK.
 
 ## Features
 
-- **Real-time Weather Monitoring**: View current weather conditions including temperature, pressure, wind speed/direction
+- **Real-time Flight Monitoring**: View current flight conditions including environmental data, position, navigation, and aircraft status
 - **Web Interface**: Modern, responsive UI built with Tailwind CSS
-- **Live Updates**: Weather data updates automatically every second
+- **Live Updates**: Flight data updates automatically every second
 - **Custom DLL Support**: Specify custom SimConnect.dll path via command line
-- **Comprehensive Flight Data**: 30 variables including weather, navigation, and flight status
+- **Comprehensive Flight Data**: 30 variables including environmental data, navigation, and flight status
 
 ## Getting Started
 
@@ -44,13 +44,13 @@ go run cmd\server\main.go -dll "D:\FlightSim\SDK\SimConnect.dll"
 #### Build and Run
 ```powershell
 # Build executable
-go build -o sim-webservice.exe cmd\server\main.go
+go build -o flight-monitor.exe cmd\server\main.go
 
 # Run with default DLL
-.\sim-webservice.exe
+.\flight-monitor.exe
 
 # Run with custom DLL
-.\sim-webservice.exe -dll "C:\Custom\Path\SimConnect.dll"
+.\flight-monitor.exe -dll "C:\Custom\Path\SimConnect.dll"
 ```
 
 Then open your browser to `http://localhost:8080`
@@ -68,12 +68,11 @@ Then open your browser to `http://localhost:8080`
 If you encounter DLL loading errors:
 
 1. **Default Path Issues**: Use the `-dll` flag to specify the correct path
-   ```powershell
-   # For MSFS 2020
-   .\sim-webservice.exe -dll "C:\MSFS SDK\SimConnect SDK\lib\SimConnect.dll"
+   ```powershell   # For MSFS 2020
+   .\flight-monitor.exe -dll "C:\MSFS SDK\SimConnect SDK\lib\SimConnect.dll"
    
    # For custom installation
-   .\sim-webservice.exe -dll "D:\YourPath\SimConnect.dll"
+   .\flight-monitor.exe -dll "D:\YourPath\SimConnect.dll"
    ```
 
 2. **Find Your SimConnect.dll**: Common locations:
@@ -96,7 +95,7 @@ If you encounter DLL loading errors:
 
 **Complete Flight Monitoring Suite**:
 
-**Weather Variables (Row 1)**:
+**Environmental Data Variables (Row 1)**:
 - Ambient Temperature (°C)
 - Barometric Pressure (inHg) 
 - Wind Speed (knots)

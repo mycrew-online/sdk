@@ -30,24 +30,24 @@ type SystemEvents struct {
 }
 
 // RegisterSystemEvents subscribes to system events from the simulator
-func (wc *WeatherClient) RegisterSystemEvents() error {
+func (mc *MonitorClient) RegisterSystemEvents() error {
 	// Subscribe to Sim state events (running/stopped)
-	if err := wc.sdk.SubscribeToSystemEvent(SIM_STATE_EVENT_ID, "Sim"); err != nil {
+	if err := mc.sdk.SubscribeToSystemEvent(SIM_STATE_EVENT_ID, "Sim"); err != nil {
 		return fmt.Errorf("failed to subscribe to Sim state events: %v", err)
 	}
 
 	// Subscribe to Pause events
-	if err := wc.sdk.SubscribeToSystemEvent(PAUSE_EVENT_ID, "Pause"); err != nil {
+	if err := mc.sdk.SubscribeToSystemEvent(PAUSE_EVENT_ID, "Pause"); err != nil {
 		return fmt.Errorf("failed to subscribe to Pause events: %v", err)
 	}
 
 	// Subscribe to AircraftLoaded events
-	if err := wc.sdk.SubscribeToSystemEvent(AIRCRAFT_LOADED_EVENT_ID, "AircraftLoaded"); err != nil {
+	if err := mc.sdk.SubscribeToSystemEvent(AIRCRAFT_LOADED_EVENT_ID, "AircraftLoaded"); err != nil {
 		return fmt.Errorf("failed to subscribe to AircraftLoaded events: %v", err)
 	}
 
 	// Subscribe to FlightLoaded events
-	if err := wc.sdk.SubscribeToSystemEvent(FLIGHT_LOADED_EVENT_ID, "FlightLoaded"); err != nil {
+	if err := mc.sdk.SubscribeToSystemEvent(FLIGHT_LOADED_EVENT_ID, "FlightLoaded"); err != nil {
 		return fmt.Errorf("failed to subscribe to FlightLoaded events: %v", err)
 	}
 
@@ -55,7 +55,7 @@ func (wc *WeatherClient) RegisterSystemEvents() error {
 }
 
 // GetSystemEventsHandler returns the current system events state
-func (wc *WeatherClient) GetSystemEventsHandler(w http.ResponseWriter, r *http.Request) {
+func (mc *MonitorClient) GetSystemEventsHandler(w http.ResponseWriter, r *http.Request) {
 	// Only allow GET requests
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -63,10 +63,10 @@ func (wc *WeatherClient) GetSystemEventsHandler(w http.ResponseWriter, r *http.R
 	}
 
 	// Get a read lock on the system events
-	wc.systemEvents.mutex.RLock()
-	defer wc.systemEvents.mutex.RUnlock()
+	mc.systemEvents.mutex.RLock()
+	defer mc.systemEvents.mutex.RUnlock()
 
 	// Return the current system events
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(wc.systemEvents)
+	json.NewEncoder(w).Encode(mc.systemEvents)
 }

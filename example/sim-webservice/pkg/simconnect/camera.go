@@ -9,7 +9,7 @@ import (
 )
 
 // CameraStateHandler handles setting the camera state in MSFS
-func (wc *WeatherClient) SetCameraState(w http.ResponseWriter, r *http.Request) {
+func (mc *MonitorClient) SetCameraState(w http.ResponseWriter, r *http.Request) {
 	// Only allow POST requests
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -43,7 +43,7 @@ func (wc *WeatherClient) SetCameraState(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Set the camera state in SimConnect
-	if err := wc.sdk.SetSimVar(CAMERA_STATE_DEFINE_ID, requestBody.State); err != nil {
+	if err := mc.sdk.SetSimVar(CAMERA_STATE_DEFINE_ID, requestBody.State); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to set camera state: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -57,9 +57,9 @@ func (wc *WeatherClient) SetCameraState(w http.ResponseWriter, r *http.Request) 
 }
 
 // RegisterCameraState registers the CAMERA_STATE variable with SimConnect
-func (wc *WeatherClient) RegisterCameraState() error {
+func (mc *MonitorClient) RegisterCameraState() error {
 	// Register Camera State
-	if err := wc.sdk.RegisterSimVarDefinition(
+	if err := mc.sdk.RegisterSimVarDefinition(
 		CAMERA_STATE_DEFINE_ID,
 		"CAMERA STATE",
 		"Enum",
@@ -69,7 +69,7 @@ func (wc *WeatherClient) RegisterCameraState() error {
 	}
 
 	// Request periodic updates for camera state
-	if err := wc.sdk.RequestSimVarDataPeriodic(
+	if err := mc.sdk.RequestSimVarDataPeriodic(
 		CAMERA_STATE_DEFINE_ID,
 		CAMERA_STATE_REQUEST_ID,
 		types.SIMCONNECT_PERIOD_SECOND,
