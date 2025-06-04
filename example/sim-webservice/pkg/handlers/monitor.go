@@ -59,3 +59,13 @@ func (mh *MonitorHandler) HandleBattery1Toggle(w http.ResponseWriter, r *http.Re
 func (mh *MonitorHandler) HandleBattery2Toggle(w http.ResponseWriter, r *http.Request) {
 	mh.monitorClient.ToggleBattery2Handler(w, r)
 }
+
+// HandleApuMasterSwitchToggle handles toggling APU master switch
+func (mh *MonitorHandler) HandleApuMasterSwitchToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleApuMasterSwitchHandler(w, r)
+}
+
+// HandleApuStartButtonToggle handles toggling APU start button
+func (mh *MonitorHandler) HandleApuStartButtonToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleApuStartButtonHandler(w, r)
+}

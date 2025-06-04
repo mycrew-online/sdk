@@ -111,6 +111,72 @@ func (mc *MonitorClient) ToggleBattery2Handler(w http.ResponseWriter, r *http.Re
 	})
 }
 
+// ToggleApuMasterSwitchHandler handles toggling APU master switch in MSFS
+func (mc *MonitorClient) ToggleApuMasterSwitchHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get current APU master switch state and toggle it
+	mc.mutex.RLock()
+	currentState := mc.currentData.ApuMasterSwitch
+	mc.mutex.RUnlock()
+
+	// Toggle the state: 0 -> 1, 1 -> 0
+	newState := int32(1)
+	if currentState == 1 {
+		newState = 0
+	}
+
+	// Set the SimVar using the registered definition ID
+	if err := mc.sdk.SetSimVar(APU_MASTER_SWITCH_DEFINE_ID, newState); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle APU master switch: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "APU master switch toggled successfully",
+	})
+}
+
+// ToggleApuStartButtonHandler handles toggling APU start button in MSFS
+func (mc *MonitorClient) ToggleApuStartButtonHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get current APU start button state and toggle it
+	mc.mutex.RLock()
+	currentState := mc.currentData.ApuStartButton
+	mc.mutex.RUnlock()
+
+	// Toggle the state: 0 -> 1, 1 -> 0
+	newState := int32(1)
+	if currentState == 1 {
+		newState = 0
+	}
+
+	// Set the SimVar using the registered definition ID
+	if err := mc.sdk.SetSimVar(APU_START_BUTTON_DEFINE_ID, newState); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle APU start button: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "APU start button toggled successfully",
+	})
+}
+
 // RegisterAircraftEvents registers aircraft control events with SimConnect
 func (mc *MonitorClient) RegisterAircraftEvents() error {
 	// Map external power event

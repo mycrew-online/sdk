@@ -107,10 +107,13 @@ async function updateMonitorData() {
             availabilityElement.innerHTML = isAvailable ? 
                 '<span class="text-green-600 font-bold">✅ Available</span>' : 
                 '<span class="text-red-600 font-bold">❌ Not Available</span>';
-        }
-          // Update Battery Systems
+        }        // Update Battery Systems
         updateBatteryUI(1, data.battery1Switch || 0, data.battery1Voltage || 0, data.battery1Charge || 0);
         updateBatteryUI(2, data.battery2Switch || 0, data.battery2Voltage || 0, data.battery2Charge || 0);
+        
+        // Update APU Systems
+        updateApuUI('Master', data.apuMasterSwitch || 0);
+        updateApuUI('Start', data.apuStartButton || 0);
         
         // Update Flight Status (Row 5)
         document.getElementById('onGround').textContent = data.onGround ? "✅ Yes" : "❌ No";
@@ -379,11 +382,99 @@ async function toggleBattery2() {
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
-        console.log('Battery 2 toggle sent successfully');
+          console.log('Battery 2 toggle sent successfully');
         
     } catch (error) {
         console.error('Failed to toggle battery 2:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
+}
+
+// APU functionality
+function updateApuUI(apuType, switchState) {
+    const statusElement = document.getElementById(`apu${apuType}Status`);
+    const buttonElement = document.getElementById(`apu${apuType}Toggle`);
+    const buttonTextElement = document.getElementById(`apu${apuType}ButtonText`);
+    
+    if (!statusElement || !buttonElement || !buttonTextElement) return;
+    
+    const isOn = switchState === 1;
+    
+    // Update status display
+    if (isOn) {
+        statusElement.innerHTML = '<span class="text-green-600 font-bold">⚡ ON</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 hover:bg-red-600 text-white focus:ring-red-500';
+        buttonTextElement.textContent = 'Turn OFF';
+    } else {
+        statusElement.innerHTML = '<span class="text-red-600 font-bold">❌ OFF</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-500 hover:bg-green-600 text-white focus:ring-green-500';
+        buttonTextElement.textContent = 'Turn ON';
+    }
+    
+    // Enable the button
+    buttonElement.disabled = false;
+}
+
+// Toggle APU Master Switch
+async function toggleApuMaster() {
+    const buttonElement = document.getElementById('apuMasterToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/apu-master', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('APU Master Switch toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle APU Master Switch:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
+}
+
+// Toggle APU Start Button
+async function toggleApuStart() {
+    const buttonElement = document.getElementById('apuStartToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/apu-start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('APU Start Button toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle APU Start Button:', error);
         // Re-enable button on error
         buttonElement.disabled = false;
     }

@@ -62,14 +62,16 @@ const ( // Core Environmental Variables (Row 1)
 	// Camera State
 	CAMERA_STATE_DEFINE_ID             = 36 // Aircraft Systems
 	EXTERNAL_POWER_DEFINE_ID           = 37
-	EXTERNAL_POWER_AVAILABLE_DEFINE_ID = 38
-	// Battery Systems
-	BATTERY1_SWITCH_DEFINE_ID  = 39
-	BATTERY2_SWITCH_DEFINE_ID  = 40
-	BATTERY1_VOLTAGE_DEFINE_ID = 41
-	BATTERY2_VOLTAGE_DEFINE_ID = 42
-	BATTERY1_CHARGE_DEFINE_ID  = 43
-	BATTERY2_CHARGE_DEFINE_ID  = 44
+	EXTERNAL_POWER_AVAILABLE_DEFINE_ID = 38 // Battery Systems
+	BATTERY1_SWITCH_DEFINE_ID          = 39
+	BATTERY2_SWITCH_DEFINE_ID          = 40
+	BATTERY1_VOLTAGE_DEFINE_ID         = 41
+	BATTERY2_VOLTAGE_DEFINE_ID         = 42
+	BATTERY1_CHARGE_DEFINE_ID          = 43
+	BATTERY2_CHARGE_DEFINE_ID          = 44
+	// APU Systems
+	APU_MASTER_SWITCH_DEFINE_ID = 45
+	APU_START_BUTTON_DEFINE_ID  = 46
 
 	// Request IDs
 	TEMP_REQUEST_ID                = 101
@@ -110,14 +112,16 @@ const ( // Core Environmental Variables (Row 1)
 	// Camera Request ID
 	CAMERA_STATE_REQUEST_ID             = 136 // Aircraft Systems Request IDs
 	EXTERNAL_POWER_REQUEST_ID           = 137
-	EXTERNAL_POWER_AVAILABLE_REQUEST_ID = 138
-	// Battery Systems Request IDs
-	BATTERY1_SWITCH_REQUEST_ID  = 139
-	BATTERY2_SWITCH_REQUEST_ID  = 140
-	BATTERY1_VOLTAGE_REQUEST_ID = 141
-	BATTERY2_VOLTAGE_REQUEST_ID = 142
-	BATTERY1_CHARGE_REQUEST_ID  = 143
-	BATTERY2_CHARGE_REQUEST_ID  = 144
+	EXTERNAL_POWER_AVAILABLE_REQUEST_ID = 138 // Battery Systems Request IDs
+	BATTERY1_SWITCH_REQUEST_ID          = 139
+	BATTERY2_SWITCH_REQUEST_ID          = 140
+	BATTERY1_VOLTAGE_REQUEST_ID         = 141
+	BATTERY2_VOLTAGE_REQUEST_ID         = 142
+	BATTERY1_CHARGE_REQUEST_ID          = 143
+	BATTERY2_CHARGE_REQUEST_ID          = 144
+	// APU Systems Request IDs
+	APU_MASTER_SWITCH_REQUEST_ID = 145
+	APU_START_BUTTON_REQUEST_ID  = 146
 )
 
 // MonitorClient handles SimConnect communication for flight data
@@ -924,6 +928,20 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 		mc.currentData.Battery1Charge = floatValue
 	case BATTERY2_CHARGE_DEFINE_ID:
 		mc.currentData.Battery2Charge = floatValue
+
+	// APU Systems
+	case APU_MASTER_SWITCH_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.ApuMasterSwitch = 1
+		} else {
+			mc.currentData.ApuMasterSwitch = 0
+		}
+	case APU_START_BUTTON_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.ApuStartButton = 1
+		} else {
+			mc.currentData.ApuStartButton = 0
+		}
 	}
 
 	// Update timestamp
@@ -998,7 +1016,6 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 	); err != nil {
 		return fmt.Errorf("failed to register BATTERY1_CHARGE: %v", err)
 	}
-
 	// Register Battery 2 Charge
 	if err := mc.sdk.RegisterSimVarDefinition(
 		BATTERY2_CHARGE_DEFINE_ID,
@@ -1007,6 +1024,26 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
 		return fmt.Errorf("failed to register BATTERY2_CHARGE: %v", err)
+	}
+
+	// Register APU Master Switch
+	if err := mc.sdk.RegisterSimVarDefinition(
+		APU_MASTER_SWITCH_DEFINE_ID,
+		"L:INI_APU_MASTER_SWITCH",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register APU_MASTER_SWITCH: %v", err)
+	}
+
+	// Register APU Start Button
+	if err := mc.sdk.RegisterSimVarDefinition(
+		APU_START_BUTTON_DEFINE_ID,
+		"L:INI_APU_START_BUTTON",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register APU_START_BUTTON: %v", err)
 	}
 
 	// Request periodic updates for all aircraft systems
@@ -1064,13 +1101,28 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 	); err != nil {
 		return fmt.Errorf("failed to start battery 1 charge monitoring: %v", err)
 	}
-
 	if err := mc.sdk.RequestSimVarDataPeriodic(
 		BATTERY2_CHARGE_DEFINE_ID,
 		BATTERY2_CHARGE_REQUEST_ID,
 		types.SIMCONNECT_PERIOD_SECOND,
 	); err != nil {
 		return fmt.Errorf("failed to start battery 2 charge monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		APU_MASTER_SWITCH_DEFINE_ID,
+		APU_MASTER_SWITCH_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start APU master switch monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		APU_START_BUTTON_DEFINE_ID,
+		APU_START_BUTTON_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start APU start button monitoring: %v", err)
 	}
 
 	return nil
