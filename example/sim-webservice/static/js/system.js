@@ -2,6 +2,11 @@
 async function updateSystemEvents() {
     try {
         const response = await fetch('/api/system');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         // Update simulator running status
@@ -34,5 +39,6 @@ async function updateSystemEvents() {
         
     } catch (error) {
         console.error('Failed to fetch system events data:', error);
+        // Don't update connection status here since main.js handles it
     }
 }

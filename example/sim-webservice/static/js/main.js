@@ -1,3 +1,13 @@
+// Connection status management
+let connectionState = {
+    isConnected: true,
+    retryCount: 0,
+    maxRetries: 5,
+    retryDelay: 1000, // Start with 1 second
+    retryTimeout: null,
+    bannerDismissed: false
+};
+
 // Tab functionality
 function showTab(tabName) {
     // Hide all tab contents
@@ -13,15 +23,123 @@ function showTab(tabName) {
     // Show selected tab content
     document.getElementById(tabName + 'Content').classList.remove('hidden');
     
-    // Add active class to selected tab
-    document.getElementById(tabName + 'Tab').classList.add('active');
+    // Add active class to selected tab    document.getElementById(tabName + 'Tab').classList.add('active');
+}
+
+// Connection status management functions
+function updateConnectionStatus(isConnected) {
+    const indicator = document.getElementById('connectionIndicator');
+    const status = document.getElementById('connectionStatus');
+    const banner = document.getElementById('connectionBanner');
+    
+    if (isConnected) {
+        // Connected state
+        indicator.className = 'w-3 h-3 bg-green-500 rounded-full mr-3';
+        status.textContent = 'Connected to MSFS';
+        
+        // Hide banner if connection restored
+        if (banner && !banner.classList.contains('hidden')) {
+            banner.classList.add('hidden');
+            connectionState.bannerDismissed = false;
+        }
+        
+        // Reset retry state
+        connectionState.retryCount = 0;
+        connectionState.retryDelay = 1000;
+        if (connectionState.retryTimeout) {
+            clearTimeout(connectionState.retryTimeout);
+            connectionState.retryTimeout = null;
+        }
+    } else {
+        // Disconnected state
+        indicator.className = 'w-3 h-3 bg-red-500 rounded-full mr-3 animate-pulse';
+        status.textContent = 'Disconnected from Backend';
+        
+        // Show banner if not dismissed
+        if (banner && !connectionState.bannerDismissed) {
+            banner.classList.remove('hidden');
+        }
+        
+        // Start retry mechanism
+        scheduleRetry();
+    }
+    
+    connectionState.isConnected = isConnected;
+}
+
+function scheduleRetry() {
+    if (connectionState.retryCount >= connectionState.maxRetries) {
+        console.log('Max retries reached. Manual refresh required.');
+        return;
+    }
+    
+    if (connectionState.retryTimeout) {
+        clearTimeout(connectionState.retryTimeout);
+    }
+    
+    connectionState.retryTimeout = setTimeout(() => {
+        connectionState.retryCount++;
+        console.log(`Retry attempt ${connectionState.retryCount}/${connectionState.maxRetries}`);
+        
+        // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+        connectionState.retryDelay = Math.min(connectionState.retryDelay * 2, 30000);
+        
+        // Try to fetch data to test connection
+        testConnection();
+    }, connectionState.retryDelay);
+}
+
+async function testConnection() {
+    try {
+        const response = await fetch('/api/monitor', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 5000
+        });
+        
+        if (response.ok) {
+            updateConnectionStatus(true);
+            // Resume normal data updates
+            updateMonitorData();
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (error) {
+        console.log('Connection test failed:', error);
+        updateConnectionStatus(false);
+    }
+}
+
+function initializeBannerControls() {
+    const dismissButton = document.getElementById('dismissBanner');
+    if (dismissButton) {
+        dismissButton.addEventListener('click', () => {
+            const banner = document.getElementById('connectionBanner');
+            if (banner) {
+                banner.classList.add('hidden');
+                connectionState.bannerDismissed = true;
+            }
+        });
+    }
 }
 
 // Fetch monitor data from API
 async function updateMonitorData() {
     try {
         const response = await fetch('/api/monitor');
-        const data = await response.json();        // Update Core Environmental Data (Row 1)
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Update connection status to connected if we got data successfully
+        if (!connectionState.isConnected) {
+            updateConnectionStatus(true);
+        }// Update Core Environmental Data (Row 1)
         document.getElementById('temperature').textContent = data.temperature.toFixed(1);
           // Convert pressure from millibars (SEA LEVEL PRESSURE) to inHg for display
         const pressureInHg = (data.seaLevelPressure || 0) / 33.8639;
@@ -110,10 +228,14 @@ async function updateMonitorData() {
         }        // Update Battery Systems
         updateBatteryUI(1, data.battery1Switch || 0, data.battery1Voltage || 0, data.battery1Charge || 0);
         updateBatteryUI(2, data.battery2Switch || 0, data.battery2Voltage || 0, data.battery2Charge || 0);
-        
-        // Update APU Systems
+          // Update APU Systems
         updateApuUI('Master', data.apuMasterSwitch || 0);
         updateApuUI('Start', data.apuStartButton || 0);
+        
+        // Update Aircraft Control Systems
+        updateAircraftControlUI('canopy', data.canopyOpen || 0);
+        updateAircraftControlUI('noSmoking', data.cabinNoSmokingSwitch || 0);
+        updateAircraftControlUI('seatbelts', data.cabinSeatbeltsSwitch || 0);
         
         // Update Flight Status (Row 5)
         document.getElementById('onGround').textContent = data.onGround ? "✅ Yes" : "❌ No";
@@ -151,12 +273,16 @@ async function updateMonitorData() {
         };
         document.getElementById('surfaceType').textContent = surfaceTypes[data.surfaceType] || "Unknown";
         document.getElementById('indicatedSpeed').textContent = (data.indicatedSpeed || 0).toFixed(1);
-        
-        // Update timestamp
+          // Update timestamp
         document.getElementById('lastUpdate').textContent = data.lastUpdate;
         
     } catch (error) {
-        console.error('Failed to fetch environmental data:', error);
+        console.error('Failed to fetch monitor data:', error);
+        
+        // Update connection status to disconnected
+        if (connectionState.isConnected) {
+            updateConnectionStatus(false);
+        }
     }
 }
 
@@ -478,14 +604,269 @@ async function toggleApuStart() {
         // Re-enable button on error
         buttonElement.disabled = false;
     }
+      // Button will be re-enabled when the next monitor update arrives
+}
+
+// Aircraft Control Systems functionality
+function updateAircraftControlUI(controlType, switchState) {
+    if (controlType === 'canopy') {
+        // Handle canopy separately as it's still a single toggle
+        const statusElement = document.getElementById('canopyStatus');
+        const buttonElement = document.getElementById('canopyToggle');
+        const buttonTextElement = document.getElementById('canopyButtonText');
+        
+        if (!statusElement || !buttonElement || !buttonTextElement) return;
+        
+        const isOn = switchState === 1;
+        
+        if (isOn) {
+            statusElement.innerHTML = '<span class="text-green-600 font-bold">✅ OPEN</span>';
+            buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 hover:bg-red-600 text-white focus:ring-red-500';
+            buttonTextElement.textContent = 'Close';
+        } else {
+            statusElement.innerHTML = '<span class="text-red-600 font-bold">❌ CLOSED</span>';
+            buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-500 hover:bg-green-600 text-white focus:ring-green-500';
+            buttonTextElement.textContent = 'Open';
+        }
+        
+        // Enable the button
+        buttonElement.disabled = false;
+    } else if (controlType === 'noSmoking' || controlType === 'seatbelts') {
+        // Handle three-button interface for no smoking and seatbelts
+        updateThreeStateControlUI(controlType, switchState);
+    }
+}
+
+// Handle three-state controls (no smoking and seatbelts)
+function updateThreeStateControlUI(controlType, switchState) {
+    const statusElement = document.getElementById(`${controlType}Status`);
+    const offBtn = document.getElementById(`${controlType}OffBtn`);
+    const autoBtn = document.getElementById(`${controlType}AutoBtn`);
+    const onBtn = document.getElementById(`${controlType}OnBtn`);
+    
+    if (!statusElement || !offBtn || !autoBtn || !onBtn) return;
+    
+    // Update status display
+    let statusText, statusClass;
+    switch(switchState) {
+        case 2: // OFF
+            statusText = '❌ OFF';
+            statusClass = 'text-red-600 font-bold';
+            break;
+        case 1: // AUTO
+            statusText = '🔄 AUTO';
+            statusClass = 'text-yellow-600 font-bold';
+            break;
+        case 0: // ON
+            statusText = '✅ ON';
+            statusClass = 'text-green-600 font-bold';
+            break;
+        default:
+            statusText = '❓ UNKNOWN';
+            statusClass = 'text-gray-500 font-bold';
+    }
+    
+    statusElement.innerHTML = `<span class="${statusClass}">${statusText}</span>`;
+    
+    // Enable all buttons first
+    offBtn.disabled = false;
+    autoBtn.disabled = false;
+    onBtn.disabled = false;
+    
+    // Reset button styles to default
+    const defaultOffClass = 'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 hover:bg-red-600 text-white focus:ring-red-500';
+    const defaultAutoClass = 'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-500';
+    const defaultOnClass = 'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-500 hover:bg-green-600 text-white focus:ring-green-500';
+    const disabledClass = 'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-400 text-white';
+    
+    offBtn.className = defaultOffClass;
+    autoBtn.className = defaultAutoClass;
+    onBtn.className = defaultOnClass;
+    
+    // Disable and style the active button
+    switch(switchState) {
+        case 2: // OFF is active
+            offBtn.disabled = true;
+            offBtn.className = disabledClass;
+            break;
+        case 1: // AUTO is active
+            autoBtn.disabled = true;
+            autoBtn.className = disabledClass;
+            break;
+        case 0: // ON is active
+            onBtn.disabled = true;
+            onBtn.className = disabledClass;
+            break;
+    }
+}
+
+// Toggle Aircraft Exit (Canopy)
+async function toggleAircraftExit() {
+    const buttonElement = document.getElementById('canopyToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/aircraft-exit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('Aircraft Exit toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle Aircraft Exit:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
     
     // Button will be re-enabled when the next monitor update arrives
+}
+
+// Toggle Cabin No Smoking Alert
+async function toggleCabinNoSmoking() {
+    const buttonElement = document.getElementById('noSmokingToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/cabin-no-smoking', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('Cabin No Smoking Alert toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle Cabin No Smoking Alert:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
+}
+
+// Toggle Cabin Seatbelts Alert
+async function toggleCabinSeatbelts() {
+    const buttonElement = document.getElementById('seatbeltsToggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/cabin-seatbelts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('Cabin Seatbelts Alert toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle Cabin Seatbelts Alert:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
+}
+
+// Set Cabin No Smoking Alert to specific state
+async function setCabinNoSmoking(state) {
+    const buttons = document.querySelectorAll('[id^="noSmokingO"][id$="Btn"], [id^="noSmokingA"][id$="Btn"]');
+    
+    // Disable all buttons temporarily
+    buttons.forEach(btn => btn.disabled = true);
+    
+    try {
+        const response = await fetch('/api/cabin-no-smoking-set', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ state: state })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log(`Cabin No Smoking Alert set to state ${state} successfully`);
+        
+    } catch (error) {
+        console.error(`Failed to set Cabin No Smoking Alert to state ${state}:`, error);
+        // Re-enable buttons on error
+        buttons.forEach(btn => btn.disabled = false);
+    }
+    
+    // Buttons will be re-enabled when the next monitor update arrives
+}
+
+// Set Cabin Seatbelts Alert to specific state
+async function setCabinSeatbelts(state) {
+    const buttons = document.querySelectorAll('[id^="seatbeltsO"][id$="Btn"], [id^="seatbeltsA"][id$="Btn"]');
+    
+    // Disable all buttons temporarily
+    buttons.forEach(btn => btn.disabled = true);
+    
+    try {
+        const response = await fetch('/api/cabin-seatbelts-set', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ state: state })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log(`Cabin Seatbelts Alert set to state ${state} successfully`);
+        
+    } catch (error) {
+        console.error(`Failed to set Cabin Seatbelts Alert to state ${state}:`, error);
+        // Re-enable buttons on error
+        buttons.forEach(btn => btn.disabled = false);
+    }
+    
+    // Buttons will be re-enabled when the next monitor update arrives
 }
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Show default tab
-    showTab('monitor');    // Update data every second
+    showTab('monitor');
+
+    // Initialize connection management
+    initializeBannerControls();
+    
+    // Update data every second
     updateMonitorData(); // Initial monitor data load
     updateSystemEvents(); // Initial system events load
     

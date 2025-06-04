@@ -57,10 +57,13 @@ type FlightData struct { // Core Environmental Data (Row 1)
 	Battery1Voltage float32 `json:"battery1Voltage"` // volts
 	Battery2Voltage float32 `json:"battery2Voltage"` // volts
 	Battery1Charge  float32 `json:"battery1Charge"`  // percentage
-	Battery2Charge  float32 `json:"battery2Charge"`  // percentage
-	// APU Systems
-	ApuMasterSwitch uint32 `json:"apuMasterSwitch"` // boolean as uint32 (0/1 off/on)
-	ApuStartButton  uint32 `json:"apuStartButton"`  // boolean as uint32 (0/1 off/on)
+	Battery2Charge  float32 `json:"battery2Charge"`  // percentage	// APU Systems
+	ApuMasterSwitch uint32  `json:"apuMasterSwitch"` // boolean as uint32 (0/1 off/on)
+	ApuStartButton  uint32  `json:"apuStartButton"`  // boolean as uint32 (0/1 off/on)
+	// Aircraft Control Systems
+	CanopyOpen           uint32 `json:"canopyOpen"`           // boolean as uint32 (0/1 closed/open)
+	CabinNoSmokingSwitch uint32 `json:"cabinNoSmokingSwitch"` // boolean as uint32 (0/1 off/on)
+	CabinSeatbeltsSwitch uint32 `json:"cabinSeatbeltsSwitch"` // boolean as uint32 (0/1 off/on)
 
 	LastUpdate string `json:"lastUpdate"`
 }

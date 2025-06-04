@@ -68,10 +68,13 @@ const ( // Core Environmental Variables (Row 1)
 	BATTERY1_VOLTAGE_DEFINE_ID         = 41
 	BATTERY2_VOLTAGE_DEFINE_ID         = 42
 	BATTERY1_CHARGE_DEFINE_ID          = 43
-	BATTERY2_CHARGE_DEFINE_ID          = 44
-	// APU Systems
-	APU_MASTER_SWITCH_DEFINE_ID = 45
-	APU_START_BUTTON_DEFINE_ID  = 46
+	BATTERY2_CHARGE_DEFINE_ID          = 44 // APU Systems
+	APU_MASTER_SWITCH_DEFINE_ID        = 45
+	APU_START_BUTTON_DEFINE_ID         = 46
+	// Aircraft Control Systems
+	CANOPY_OPEN_DEFINE_ID             = 47
+	CABIN_NO_SMOKING_SWITCH_DEFINE_ID = 48
+	CABIN_SEATBELTS_SWITCH_DEFINE_ID  = 49
 
 	// Request IDs
 	TEMP_REQUEST_ID                = 101
@@ -118,10 +121,13 @@ const ( // Core Environmental Variables (Row 1)
 	BATTERY1_VOLTAGE_REQUEST_ID         = 141
 	BATTERY2_VOLTAGE_REQUEST_ID         = 142
 	BATTERY1_CHARGE_REQUEST_ID          = 143
-	BATTERY2_CHARGE_REQUEST_ID          = 144
-	// APU Systems Request IDs
-	APU_MASTER_SWITCH_REQUEST_ID = 145
-	APU_START_BUTTON_REQUEST_ID  = 146
+	BATTERY2_CHARGE_REQUEST_ID          = 144 // APU Systems Request IDs
+	APU_MASTER_SWITCH_REQUEST_ID        = 145
+	APU_START_BUTTON_REQUEST_ID         = 146
+	// Aircraft Control Systems Request IDs
+	CANOPY_OPEN_REQUEST_ID             = 147
+	CABIN_NO_SMOKING_SWITCH_REQUEST_ID = 148
+	CABIN_SEATBELTS_SWITCH_REQUEST_ID  = 149
 )
 
 // MonitorClient handles SimConnect communication for flight data
@@ -928,7 +934,6 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 		mc.currentData.Battery1Charge = floatValue
 	case BATTERY2_CHARGE_DEFINE_ID:
 		mc.currentData.Battery2Charge = floatValue
-
 	// APU Systems
 	case APU_MASTER_SWITCH_DEFINE_ID:
 		if intValue != 0 {
@@ -942,6 +947,19 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 		} else {
 			mc.currentData.ApuStartButton = 0
 		}
+	// Aircraft Control Systems
+	case CANOPY_OPEN_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.CanopyOpen = 1
+		} else {
+			mc.currentData.CanopyOpen = 0
+		}
+	case CABIN_NO_SMOKING_SWITCH_DEFINE_ID:
+		// Preserve 3-state value: 2=OFF, 1=AUTO, 0=ON
+		mc.currentData.CabinNoSmokingSwitch = uint32(intValue)
+	case CABIN_SEATBELTS_SWITCH_DEFINE_ID:
+		// Preserve 3-state value: 2=OFF, 1=AUTO, 0=ON
+		mc.currentData.CabinSeatbeltsSwitch = uint32(intValue)
 	}
 
 	// Update timestamp
@@ -1035,7 +1053,6 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 	); err != nil {
 		return fmt.Errorf("failed to register APU_MASTER_SWITCH: %v", err)
 	}
-
 	// Register APU Start Button
 	if err := mc.sdk.RegisterSimVarDefinition(
 		APU_START_BUTTON_DEFINE_ID,
@@ -1044,6 +1061,34 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 		types.SIMCONNECT_DATATYPE_INT32,
 	); err != nil {
 		return fmt.Errorf("failed to register APU_START_BUTTON: %v", err)
+	}
+
+	// Register Aircraft Control Systems
+	// Register Canopy Open
+	if err := mc.sdk.RegisterSimVarDefinition(
+		CANOPY_OPEN_DEFINE_ID,
+		"CANOPY OPEN",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register CANOPY_OPEN: %v", err)
+	}
+	// Register Cabin No Smoking Alert Switch
+	if err := mc.sdk.RegisterSimVarDefinition(
+		CABIN_NO_SMOKING_SWITCH_DEFINE_ID,
+		"L:INI_NO_SMOKING_SWITCH",
+		"Number",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register CABIN_NO_SMOKING_SWITCH: %v", err)
+	} // Register Cabin Seatbelts Alert Switch
+	if err := mc.sdk.RegisterSimVarDefinition(
+		CABIN_SEATBELTS_SWITCH_DEFINE_ID,
+		"L:INI_SEATBELTS_SWITCH",
+		"Number",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register CABIN_SEATBELTS_SWITCH: %v", err)
 	}
 
 	// Request periodic updates for all aircraft systems
@@ -1116,13 +1161,37 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 	); err != nil {
 		return fmt.Errorf("failed to start APU master switch monitoring: %v", err)
 	}
-
 	if err := mc.sdk.RequestSimVarDataPeriodic(
 		APU_START_BUTTON_DEFINE_ID,
 		APU_START_BUTTON_REQUEST_ID,
 		types.SIMCONNECT_PERIOD_SECOND,
 	); err != nil {
 		return fmt.Errorf("failed to start APU start button monitoring: %v", err)
+	}
+
+	// Request periodic updates for aircraft control systems
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		CANOPY_OPEN_DEFINE_ID,
+		CANOPY_OPEN_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start canopy open monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		CABIN_NO_SMOKING_SWITCH_DEFINE_ID,
+		CABIN_NO_SMOKING_SWITCH_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start cabin no smoking switch monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		CABIN_SEATBELTS_SWITCH_DEFINE_ID,
+		CABIN_SEATBELTS_SWITCH_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start cabin seatbelts switch monitoring: %v", err)
 	}
 
 	return nil

@@ -69,3 +69,28 @@ func (mh *MonitorHandler) HandleApuMasterSwitchToggle(w http.ResponseWriter, r *
 func (mh *MonitorHandler) HandleApuStartButtonToggle(w http.ResponseWriter, r *http.Request) {
 	mh.monitorClient.ToggleApuStartButtonHandler(w, r)
 }
+
+// HandleAircraftExitToggle handles toggling aircraft exit (canopy)
+func (mh *MonitorHandler) HandleAircraftExitToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleAircraftExitHandler(w, r)
+}
+
+// HandleCabinNoSmokingToggle handles toggling cabin no smoking alert
+func (mh *MonitorHandler) HandleCabinNoSmokingToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleCabinNoSmokingAlertHandler(w, r)
+}
+
+// HandleCabinSeatbeltsToggle handles toggling cabin seatbelts alert
+func (mh *MonitorHandler) HandleCabinSeatbeltsToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleCabinSeatbeltsAlertHandler(w, r)
+}
+
+// HandleCabinNoSmokingSet handles setting cabin no smoking alert to a specific state
+func (mh *MonitorHandler) HandleCabinNoSmokingSet(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.SetCabinNoSmokingAlertHandler(w, r)
+}
+
+// HandleCabinSeatbeltsSet handles setting cabin seatbelts alert to a specific state
+func (mh *MonitorHandler) HandleCabinSeatbeltsSet(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.SetCabinSeatbeltsAlertHandler(w, r)
+}

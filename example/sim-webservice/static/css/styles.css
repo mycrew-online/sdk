@@ -37,3 +37,33 @@
 .flight-card-unit {
     @apply text-xs sm:text-sm lg:text-lg text-gray-500;
 }
+
+/* Connection banner animation */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+#connectionBanner:not(.hidden) {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Connection status indicator pulse animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
