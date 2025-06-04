@@ -2,7 +2,7 @@
 
 A comprehensive real-time web interface for monitoring and controlling Microsoft Flight Simulator flight data using the SimConnect SDK.
 
-![image](https://github.com/user-attachments/assets/7d18d2a8-aafe-4a7c-a391-b06c4028e3f7)
+![image (19)](https://github.com/user-attachments/assets/d131d57b-976b-40a7-a866-01b3a73b24dd)
 
 ## Features
 
