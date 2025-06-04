@@ -732,6 +732,53 @@ async function toggleAircraftExit() {
     // Button will be re-enabled when the next monitor update arrives
 }
 
+// Toggle Individual Aircraft Door
+async function toggleAircraftDoor(doorPosition) {
+    const buttonElement = document.getElementById(`door${doorPosition}Toggle`);
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/aircraft-exit-${doorPosition.toLowerCase()}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log(`Aircraft Door ${doorPosition} toggle sent successfully`);
+        
+        // Re-enable button after a short delay
+        setTimeout(() => {
+            buttonElement.disabled = false;
+        }, 1000);
+        
+    } catch (error) {
+        console.error(`Failed to toggle Aircraft Door ${doorPosition}:`, error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+}
+
+// Initialize door controls
+function initializeDoorControls() {
+    // Enable door buttons after initial load
+    const doors = ['1L', '1R', '2L', '2R'];
+    doors.forEach(door => {
+        const buttonElement = document.getElementById(`door${door}Toggle`);
+        if (buttonElement) {
+            buttonElement.disabled = false;
+        }
+    });
+}
+
 // Toggle Cabin No Smoking Alert
 async function toggleCabinNoSmoking() {
     const buttonElement = document.getElementById('noSmokingToggle');
@@ -873,7 +920,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set intervals for updates
     setInterval(updateMonitorData, 1000);
     setInterval(updateSystemEvents, 1000);
-    
-    initializeThemeToggle();
+      initializeThemeToggle();
     initializeCameraToggle();
+    initializeDoorControls();
 });

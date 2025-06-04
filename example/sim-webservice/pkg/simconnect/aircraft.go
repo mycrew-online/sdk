@@ -12,6 +12,11 @@ import (
 const (
 	TOGGLE_EXTERNAL_POWER_EVENT_ID = 2001
 	TOGGLE_AIRCRAFT_EXIT_EVENT_ID  = 2002
+	// Add new door-specific event IDs
+	TOGGLE_AIRCRAFT_EXIT_1L_EVENT_ID = 2003
+	TOGGLE_AIRCRAFT_EXIT_1R_EVENT_ID = 2004
+	TOGGLE_AIRCRAFT_EXIT_2L_EVENT_ID = 2005
+	TOGGLE_AIRCRAFT_EXIT_2R_EVENT_ID = 2006
 )
 
 // Constants for aircraft notification group
@@ -202,6 +207,118 @@ func (mc *MonitorClient) ToggleAircraftExitHandler(w http.ResponseWriter, r *htt
 	json.NewEncoder(w).Encode(map[string]string{
 		"status":  "success",
 		"message": "Aircraft exit toggled successfully",
+	})
+}
+
+// ToggleAircraftExit1LHandler handles toggling aircraft door 1L in MSFS
+func (mc *MonitorClient) ToggleAircraftExit1LHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Transmit the TOGGLE_AIRCRAFT_EXIT event with parameter 1 for door 1L
+	if err := mc.sdk.TransmitClientEvent(
+		types.SIMCONNECT_OBJECT_ID_USER,
+		TOGGLE_AIRCRAFT_EXIT_EVENT_ID,
+		1, // Parameter for door 1L (Left door, row 1)
+		AIRCRAFT_NOTIFICATION_GROUP_ID,
+		types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+	); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle aircraft door 1L: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Aircraft door 1L toggled successfully",
+	})
+}
+
+// ToggleAircraftExit1RHandler handles toggling aircraft door 1R in MSFS
+func (mc *MonitorClient) ToggleAircraftExit1RHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Transmit the TOGGLE_AIRCRAFT_EXIT event with parameter 2 for door 1R
+	if err := mc.sdk.TransmitClientEvent(
+		types.SIMCONNECT_OBJECT_ID_USER,
+		TOGGLE_AIRCRAFT_EXIT_EVENT_ID,
+		2, // Parameter for door 1R (Right door, row 1)
+		AIRCRAFT_NOTIFICATION_GROUP_ID,
+		types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+	); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle aircraft door 1R: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Aircraft door 1R toggled successfully",
+	})
+}
+
+// ToggleAircraftExit2LHandler handles toggling aircraft door 2L in MSFS
+func (mc *MonitorClient) ToggleAircraftExit2LHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Transmit the TOGGLE_AIRCRAFT_EXIT event with parameter 3 for door 2L
+	if err := mc.sdk.TransmitClientEvent(
+		types.SIMCONNECT_OBJECT_ID_USER,
+		TOGGLE_AIRCRAFT_EXIT_EVENT_ID,
+		3, // Parameter for door 2L (Left door, row 2)
+		AIRCRAFT_NOTIFICATION_GROUP_ID,
+		types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+	); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle aircraft door 2L: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Aircraft door 2L toggled successfully",
+	})
+}
+
+// ToggleAircraftExit2RHandler handles toggling aircraft door 2R in MSFS
+func (mc *MonitorClient) ToggleAircraftExit2RHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Transmit the TOGGLE_AIRCRAFT_EXIT event with parameter 4 for door 2R
+	if err := mc.sdk.TransmitClientEvent(
+		types.SIMCONNECT_OBJECT_ID_USER,
+		TOGGLE_AIRCRAFT_EXIT_EVENT_ID,
+		4, // Parameter for door 2R (Right door, row 2)
+		AIRCRAFT_NOTIFICATION_GROUP_ID,
+		types.SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+	); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle aircraft door 2R: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Aircraft door 2R toggled successfully",
 	})
 }
 

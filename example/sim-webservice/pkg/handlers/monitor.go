@@ -75,6 +75,26 @@ func (mh *MonitorHandler) HandleAircraftExitToggle(w http.ResponseWriter, r *htt
 	mh.monitorClient.ToggleAircraftExitHandler(w, r)
 }
 
+// HandleAircraftExit1LToggle handles toggling aircraft door 1L
+func (mh *MonitorHandler) HandleAircraftExit1LToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleAircraftExit1LHandler(w, r)
+}
+
+// HandleAircraftExit1RToggle handles toggling aircraft door 1R
+func (mh *MonitorHandler) HandleAircraftExit1RToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleAircraftExit1RHandler(w, r)
+}
+
+// HandleAircraftExit2LToggle handles toggling aircraft door 2L
+func (mh *MonitorHandler) HandleAircraftExit2LToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleAircraftExit2LHandler(w, r)
+}
+
+// HandleAircraftExit2RToggle handles toggling aircraft door 2R
+func (mh *MonitorHandler) HandleAircraftExit2RToggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleAircraftExit2RHandler(w, r)
+}
+
 // HandleCabinNoSmokingToggle handles toggling cabin no smoking alert
 func (mh *MonitorHandler) HandleCabinNoSmokingToggle(w http.ResponseWriter, r *http.Request) {
 	mh.monitorClient.ToggleCabinNoSmokingAlertHandler(w, r)

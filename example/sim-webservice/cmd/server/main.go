@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
 	"sim-webservice/pkg/handlers"
 	"sim-webservice/pkg/simconnect"
 )
@@ -45,6 +44,10 @@ func main() {
 	http.HandleFunc("/api/apu-master", monitorHandler.HandleApuMasterSwitchToggle)
 	http.HandleFunc("/api/apu-start", monitorHandler.HandleApuStartButtonToggle)
 	http.HandleFunc("/api/aircraft-exit", monitorHandler.HandleAircraftExitToggle)
+	http.HandleFunc("/api/aircraft-exit-1l", monitorHandler.HandleAircraftExit1LToggle)
+	http.HandleFunc("/api/aircraft-exit-1r", monitorHandler.HandleAircraftExit1RToggle)
+	http.HandleFunc("/api/aircraft-exit-2l", monitorHandler.HandleAircraftExit2LToggle)
+	http.HandleFunc("/api/aircraft-exit-2r", monitorHandler.HandleAircraftExit2RToggle)
 	http.HandleFunc("/api/cabin-no-smoking", monitorHandler.HandleCabinNoSmokingToggle)
 	http.HandleFunc("/api/cabin-seatbelts", monitorHandler.HandleCabinSeatbeltsToggle)
 	http.HandleFunc("/api/cabin-no-smoking-set", monitorHandler.HandleCabinNoSmokingSet)
