@@ -49,3 +49,13 @@ func (mh *MonitorHandler) HandleCameraStateToggle(w http.ResponseWriter, r *http
 func (mh *MonitorHandler) HandleExternalPowerToggle(w http.ResponseWriter, r *http.Request) {
 	mh.monitorClient.ToggleExternalPowerHandler(w, r)
 }
+
+// HandleBattery1Toggle handles toggling battery 1
+func (mh *MonitorHandler) HandleBattery1Toggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleBattery1Handler(w, r)
+}
+
+// HandleBattery2Toggle handles toggling battery 2
+func (mh *MonitorHandler) HandleBattery2Toggle(w http.ResponseWriter, r *http.Request) {
+	mh.monitorClient.ToggleBattery2Handler(w, r)
+}

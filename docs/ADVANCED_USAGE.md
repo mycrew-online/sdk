@@ -18,6 +18,8 @@ This guide covers advanced usage patterns for the SimConnect Go SDK, including c
 
 The SDK's `Listen()` method is designed to be called **only once per client instance**. It uses internal synchronization (`sync.Once`) to ensure thread safety and prevent multiple dispatch goroutines.
 
+**Critical**: When multiple goroutines read from the same channel, each message is delivered to only ONE goroutine (load balancing), not all of them. This causes message loss and unpredictable behavior.
+
 ```go
 // ❌ INCORRECT: Multiple Listen() calls on the same client
 sdk := client.New("MyApp")
@@ -26,38 +28,32 @@ messages2 := sdk.Listen() // This returns the SAME channel as messages1
 ```
 
 ```go
-// ⚠️ DISTRIBUTED PROCESSING: Multiple goroutines reading from same channel
-// NOTE: Each message goes to ONLY ONE goroutine (load balanced)
+// ❌ INCORRECT: Multiple goroutines reading from same channel
+// This pattern causes message loss - each message goes to only ONE goroutine
 sdk := client.New("MyApp")
 messages := sdk.Listen()
 
-// Worker pool pattern - all workers handle all message types
+// DON'T DO THIS - messages will be randomly distributed between goroutines
 go func() {
     for msg := range messages {
-        // Worker 1 gets SOME random messages (mixed types)
-        processAnyMessage(msg, "Worker-1")
+        // This goroutine will miss messages that go to the other goroutine
+        processMessage(msg, "Worker-1")
     }
 }()
 
 go func() {
     for msg := range messages {
-        // Worker 2 gets OTHER random messages (mixed types)
-        processAnyMessage(msg, "Worker-2")
+        // This goroutine will also miss messages that go to the other goroutine
+        processMessage(msg, "Worker-2")
     }
 }()
 
-func processAnyMessage(msg any, workerID string) {
-    if msgMap, ok := msg.(map[string]any); ok {
-        switch msgMap["type"] {
-        case "SIMOBJECT_DATA":
-            fmt.Printf("[%s] Processing flight data\n", workerID)
-        case "EVENT":
-            fmt.Printf("[%s] Processing system event\n", workerID)
-        case "EXCEPTION":
-            fmt.Printf("[%s] Handling exception\n", workerID)
-        }
-    }
-}
+// ❌ This is problematic because:
+// 1. Each message is delivered to only ONE goroutine (not both)
+// 2. You cannot predict which goroutine will receive which message
+// 3. Critical messages may be missed by the intended processor
+// 4. This should only be used for compute-heavy processing where 
+//    missing some messages is acceptable
 ```
 
 ### Fan-Out Pattern for Message Distribution

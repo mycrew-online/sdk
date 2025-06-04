@@ -98,10 +98,19 @@ async function updateMonitorData() {
         document.getElementById('comFrequency').textContent = (data.comFrequency || 0).toFixed(3);
         document.getElementById('navFrequency').textContent = (data.nav1Frequency || 0).toFixed(3);
         document.getElementById('gpsDistance').textContent = Math.round(data.gpsDistance || 0);
-        document.getElementById('gpsEte').textContent = Math.round(data.gpsEte || 0);
-
-        // Update External Power Status
+        document.getElementById('gpsEte').textContent = Math.round(data.gpsEte || 0);        // Update External Power Status
         updateExternalPowerUI(data.externalPowerOn || 0);
+          // Update External Power Availability
+        const availabilityElement = document.getElementById('externalPowerAvailable');
+        if (availabilityElement) {
+            const isAvailable = (data.externalPowerAvailable === 1);
+            availabilityElement.innerHTML = isAvailable ? 
+                '<span class="text-green-600 font-bold">✅ Available</span>' : 
+                '<span class="text-red-600 font-bold">❌ Not Available</span>';
+        }
+          // Update Battery Systems
+        updateBatteryUI(1, data.battery1Switch || 0, data.battery1Voltage || 0, data.battery1Charge || 0);
+        updateBatteryUI(2, data.battery2Switch || 0, data.battery2Voltage || 0, data.battery2Charge || 0);
         
         // Update Flight Status (Row 5)
         document.getElementById('onGround').textContent = data.onGround ? "✅ Yes" : "❌ No";
@@ -264,6 +273,117 @@ async function toggleExternalPower() {
         
     } catch (error) {
         console.error('Failed to toggle external power:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+      // Button will be re-enabled when the next monitor update arrives
+}
+
+// Battery functionality
+function updateBatteryUI(batteryNumber, switchState, voltage, charge) {
+    const statusElement = document.getElementById(`battery${batteryNumber}Status`);
+    const voltageElement = document.getElementById(`battery${batteryNumber}Voltage`);
+    const chargeElement = document.getElementById(`battery${batteryNumber}Charge`);
+    const buttonElement = document.getElementById(`battery${batteryNumber}Toggle`);
+    const buttonTextElement = document.getElementById(`battery${batteryNumber}ButtonText`);
+    
+    if (!statusElement || !voltageElement || !buttonElement || !buttonTextElement) return;
+    
+    const isOn = switchState === 1;
+    
+    // Update status display
+    if (isOn) {
+        statusElement.innerHTML = '<span class="text-green-600 font-bold">⚡ ON</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 hover:bg-red-600 text-white focus:ring-red-500';
+        buttonTextElement.textContent = 'Turn OFF';
+    } else {
+        statusElement.innerHTML = '<span class="text-red-600 font-bold">❌ OFF</span>';
+        buttonElement.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-500 hover:bg-green-600 text-white focus:ring-green-500';
+        buttonTextElement.textContent = 'Turn ON';
+    }
+    
+    // Update voltage display with health indicator
+    const voltageValue = voltage || 0;
+    if (voltageValue > 22) {
+        voltageElement.innerHTML = `<span class="text-green-600">${voltageValue.toFixed(1)}</span>`;
+    } else if (voltageValue > 20) {
+        voltageElement.innerHTML = `<span class="text-yellow-600">${voltageValue.toFixed(1)}</span>`;
+    } else {
+        voltageElement.innerHTML = `<span class="text-red-600">${voltageValue.toFixed(1)}</span>`;
+    }
+      // Update charge display with health indicator
+    if (chargeElement) {
+        const chargeValue = charge || 0;
+        if (chargeValue > 75) {
+            chargeElement.innerHTML = `<span class="text-green-600">${chargeValue.toFixed(1)}</span>`;
+        } else if (chargeValue > 25) {
+            chargeElement.innerHTML = `<span class="text-yellow-600">${chargeValue.toFixed(1)}</span>`;
+        } else {
+            chargeElement.innerHTML = `<span class="text-red-600">${chargeValue.toFixed(1)}</span>`;
+        }
+    }
+    
+    // Enable the button
+    buttonElement.disabled = false;
+}
+
+// Toggle battery 1
+async function toggleBattery1() {
+    const buttonElement = document.getElementById('battery1Toggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/battery1', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('Battery 1 toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle battery 1:', error);
+        // Re-enable button on error
+        buttonElement.disabled = false;
+    }
+    
+    // Button will be re-enabled when the next monitor update arrives
+}
+
+// Toggle battery 2
+async function toggleBattery2() {
+    const buttonElement = document.getElementById('battery2Toggle');
+    
+    if (!buttonElement) return;
+    
+    // Disable button temporarily
+    buttonElement.disabled = true;
+    
+    try {
+        const response = await fetch('/api/battery2', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('Battery 2 toggle sent successfully');
+        
+    } catch (error) {
+        console.error('Failed to toggle battery 2:', error);
         // Re-enable button on error
         buttonElement.disabled = false;
     }

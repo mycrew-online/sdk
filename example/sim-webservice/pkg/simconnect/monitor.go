@@ -60,10 +60,16 @@ const ( // Core Environmental Variables (Row 1)
 	SURFACE_TYPE_DEFINE_ID     = 29
 	INDICATED_SPEED_DEFINE_ID  = 30
 	// Camera State
-	CAMERA_STATE_DEFINE_ID = 36
-
-	// Aircraft Systems
-	EXTERNAL_POWER_DEFINE_ID = 37
+	CAMERA_STATE_DEFINE_ID             = 36 // Aircraft Systems
+	EXTERNAL_POWER_DEFINE_ID           = 37
+	EXTERNAL_POWER_AVAILABLE_DEFINE_ID = 38
+	// Battery Systems
+	BATTERY1_SWITCH_DEFINE_ID  = 39
+	BATTERY2_SWITCH_DEFINE_ID  = 40
+	BATTERY1_VOLTAGE_DEFINE_ID = 41
+	BATTERY2_VOLTAGE_DEFINE_ID = 42
+	BATTERY1_CHARGE_DEFINE_ID  = 43
+	BATTERY2_CHARGE_DEFINE_ID  = 44
 
 	// Request IDs
 	TEMP_REQUEST_ID                = 101
@@ -102,10 +108,16 @@ const ( // Core Environmental Variables (Row 1)
 	SURFACE_TYPE_REQUEST_ID        = 129
 	INDICATED_SPEED_REQUEST_ID     = 130
 	// Camera Request ID
-	CAMERA_STATE_REQUEST_ID = 136
-
-	// Aircraft Systems Request IDs
-	EXTERNAL_POWER_REQUEST_ID = 137
+	CAMERA_STATE_REQUEST_ID             = 136 // Aircraft Systems Request IDs
+	EXTERNAL_POWER_REQUEST_ID           = 137
+	EXTERNAL_POWER_AVAILABLE_REQUEST_ID = 138
+	// Battery Systems Request IDs
+	BATTERY1_SWITCH_REQUEST_ID  = 139
+	BATTERY2_SWITCH_REQUEST_ID  = 140
+	BATTERY1_VOLTAGE_REQUEST_ID = 141
+	BATTERY2_VOLTAGE_REQUEST_ID = 142
+	BATTERY1_CHARGE_REQUEST_ID  = 143
+	BATTERY2_CHARGE_REQUEST_ID  = 144
 )
 
 // MonitorClient handles SimConnect communication for flight data
@@ -325,17 +337,18 @@ func (mc *MonitorClient) Connect() error {
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
 		return fmt.Errorf("failed to register VERTICAL SPEED: %v", err)
-	}
-
-	// Airport/Navigation Info Variables (Row 4)	// Nearest Airport
-	if err := mc.sdk.RegisterSimVarDefinition(
-		NEAREST_AIRPORT_DEFINE_ID,
-		"FACILITY AIRPORT CLOSEST",
-		"",
-		types.SIMCONNECT_DATATYPE_STRINGV,
-	); err != nil {
-		return fmt.Errorf("failed to register FACILITY AIRPORT CLOSEST: %v", err)
-	}
+	} // Airport/Navigation Info Variables (Row 4) - Temporarily disabled due to SimConnect issues
+	// TODO: Fix nearest airport SimVar registration
+	/*
+		if err := mc.sdk.RegisterSimVarDefinition(
+			NEAREST_AIRPORT_DEFINE_ID,
+			"GPS WP NEXT ID",
+			"",
+			types.SIMCONNECT_DATATYPE_STRINGV,
+		); err != nil {
+			return fmt.Errorf("failed to register GPS WP NEXT ID: %v", err)
+		}
+	*/
 
 	// Distance to Airport
 	if err := mc.sdk.RegisterSimVarDefinition(
@@ -596,11 +609,12 @@ func (mc *MonitorClient) Connect() error {
 	if err := mc.sdk.RequestSimVarDataPeriodic(VERTICAL_SPEED_DEFINE_ID, VERTICAL_SPEED_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start vertical speed monitoring: %v", err)
 	}
-
-	// Airport/Navigation Info Variables (Row 4)
-	if err := mc.sdk.RequestSimVarDataPeriodic(NEAREST_AIRPORT_DEFINE_ID, NEAREST_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
-		return fmt.Errorf("failed to start nearest airport monitoring: %v", err)
-	}
+	// Airport/Navigation Info Variables (Row 4) - Temporarily disabled
+	/*
+		if err := mc.sdk.RequestSimVarDataPeriodic(NEAREST_AIRPORT_DEFINE_ID, NEAREST_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
+			return fmt.Errorf("failed to start nearest airport monitoring: %v", err)
+		}
+	*/
 
 	if err := mc.sdk.RequestSimVarDataPeriodic(DISTANCE_TO_AIRPORT_DEFINE_ID, DISTANCE_TO_AIRPORT_REQUEST_ID, types.SIMCONNECT_PERIOD_SECOND); err != nil {
 		return fmt.Errorf("failed to start distance to airport monitoring: %v", err)
@@ -827,13 +841,14 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 	case HEADING_DEFINE_ID:
 		mc.currentData.Heading = floatValue
 	case VERTICAL_SPEED_DEFINE_ID:
-		mc.currentData.VerticalSpeed = floatValue
-	// Airport/Navigation Info Variables (Row 4)
-	case NEAREST_AIRPORT_DEFINE_ID:
-		// For string values, we need special handling
-		if strVal, ok := data.Value.(string); ok {
-			mc.currentData.NearestAirport = strVal
-		}
+		mc.currentData.VerticalSpeed = floatValue // Airport/Navigation Info Variables (Row 4) - Temporarily disabled
+	/*
+		case NEAREST_AIRPORT_DEFINE_ID:
+			// For string values, we need special handling
+			if strVal, ok := data.Value.(string); ok {
+				mc.currentData.NearestAirport = strVal
+			}
+	*/
 	case DISTANCE_TO_AIRPORT_DEFINE_ID:
 		mc.currentData.DistanceToAirport = floatValue
 	case COM_FREQUENCY_DEFINE_ID:
@@ -881,6 +896,34 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 		} else {
 			mc.currentData.ExternalPowerOn = 0
 		}
+	case EXTERNAL_POWER_AVAILABLE_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.ExternalPowerAvailable = 1
+		} else {
+			mc.currentData.ExternalPowerAvailable = 0
+		}
+
+	// Battery Systems
+	case BATTERY1_SWITCH_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.Battery1Switch = 1
+		} else {
+			mc.currentData.Battery1Switch = 0
+		}
+	case BATTERY2_SWITCH_DEFINE_ID:
+		if intValue != 0 {
+			mc.currentData.Battery2Switch = 1
+		} else {
+			mc.currentData.Battery2Switch = 0
+		}
+	case BATTERY1_VOLTAGE_DEFINE_ID:
+		mc.currentData.Battery1Voltage = floatValue
+	case BATTERY2_VOLTAGE_DEFINE_ID:
+		mc.currentData.Battery2Voltage = floatValue
+	case BATTERY1_CHARGE_DEFINE_ID:
+		mc.currentData.Battery1Charge = floatValue
+	case BATTERY2_CHARGE_DEFINE_ID:
+		mc.currentData.Battery2Charge = floatValue
 	}
 
 	// Update timestamp
@@ -897,15 +940,137 @@ func (mc *MonitorClient) RegisterAircraftSystems() error {
 		types.SIMCONNECT_DATATYPE_INT32,
 	); err != nil {
 		return fmt.Errorf("failed to register EXTERNAL POWER ON: %v", err)
+	} // Register External Power Available
+	if err := mc.sdk.RegisterSimVarDefinition(
+		EXTERNAL_POWER_AVAILABLE_DEFINE_ID,
+		"EXTERNAL POWER AVAILABLE",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register EXTERNAL POWER AVAILABLE: %v", err)
 	}
 
-	// Request periodic updates for external power
+	// Register Battery 1 Switch
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY1_SWITCH_DEFINE_ID,
+		"L:INI_OVHD_ELEC_BAT_1_PB_IS_AUTO_SWITCH",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY1_SWITCH: %v", err)
+	}
+
+	// Register Battery 2 Switch
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY2_SWITCH_DEFINE_ID,
+		"L:INI_OVHD_ELEC_BAT_2_PB_IS_AUTO_SWITCH",
+		"Bool",
+		types.SIMCONNECT_DATATYPE_INT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY2_SWITCH: %v", err)
+	}
+
+	// Register Battery 1 Voltage
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY1_VOLTAGE_DEFINE_ID,
+		"L:INI_BATTERY1_CURR_VOLTAGE",
+		"Volts",
+		types.SIMCONNECT_DATATYPE_FLOAT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY1_VOLTAGE: %v", err)
+	}
+	// Register Battery 2 Voltage
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY2_VOLTAGE_DEFINE_ID,
+		"L:INI_BATTERY2_CURR_VOLTAGE",
+		"Volts",
+		types.SIMCONNECT_DATATYPE_FLOAT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY2_VOLTAGE: %v", err)
+	}
+
+	// Register Battery 1 Charge
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY1_CHARGE_DEFINE_ID,
+		"L:INI_BATTERY1_CURR_CHARGE",
+		"Percent",
+		types.SIMCONNECT_DATATYPE_FLOAT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY1_CHARGE: %v", err)
+	}
+
+	// Register Battery 2 Charge
+	if err := mc.sdk.RegisterSimVarDefinition(
+		BATTERY2_CHARGE_DEFINE_ID,
+		"L:INI_BATTERY2_CURR_CHARGE",
+		"Percent",
+		types.SIMCONNECT_DATATYPE_FLOAT32,
+	); err != nil {
+		return fmt.Errorf("failed to register BATTERY2_CHARGE: %v", err)
+	}
+
+	// Request periodic updates for all aircraft systems
 	if err := mc.sdk.RequestSimVarDataPeriodic(
 		EXTERNAL_POWER_DEFINE_ID,
 		EXTERNAL_POWER_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND); err != nil {
+		return fmt.Errorf("failed to start external power monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		EXTERNAL_POWER_AVAILABLE_DEFINE_ID,
+		EXTERNAL_POWER_AVAILABLE_REQUEST_ID,
 		types.SIMCONNECT_PERIOD_SECOND,
 	); err != nil {
-		return fmt.Errorf("failed to start external power monitoring: %v", err)
+		return fmt.Errorf("failed to start external power available monitoring: %v", err)
+	}
+
+	// Request periodic updates for battery systems
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY1_SWITCH_DEFINE_ID,
+		BATTERY1_SWITCH_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 1 switch monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY2_SWITCH_DEFINE_ID,
+		BATTERY2_SWITCH_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 2 switch monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY1_VOLTAGE_DEFINE_ID,
+		BATTERY1_VOLTAGE_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 1 voltage monitoring: %v", err)
+	}
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY2_VOLTAGE_DEFINE_ID,
+		BATTERY2_VOLTAGE_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 2 voltage monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY1_CHARGE_DEFINE_ID,
+		BATTERY1_CHARGE_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 1 charge monitoring: %v", err)
+	}
+
+	if err := mc.sdk.RequestSimVarDataPeriodic(
+		BATTERY2_CHARGE_DEFINE_ID,
+		BATTERY2_CHARGE_REQUEST_ID,
+		types.SIMCONNECT_PERIOD_SECOND,
+	); err != nil {
+		return fmt.Errorf("failed to start battery 2 charge monitoring: %v", err)
 	}
 
 	return nil

@@ -39,6 +39,8 @@ func main() {
 	http.HandleFunc("/api/monitor", monitorHandler.HandleMonitorAPI)
 	http.HandleFunc("/api/camera", monitorHandler.HandleCameraStateToggle)
 	http.HandleFunc("/api/external-power", monitorHandler.HandleExternalPowerToggle)
+	http.HandleFunc("/api/battery1", monitorHandler.HandleBattery1Toggle)
+	http.HandleFunc("/api/battery2", monitorHandler.HandleBattery2Toggle)
 	http.HandleFunc("/api/system", monitorClient.GetSystemEventsHandler)
 
 	// Serve static files

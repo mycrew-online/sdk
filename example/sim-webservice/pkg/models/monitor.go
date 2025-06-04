@@ -48,10 +48,16 @@ type FlightData struct { // Core Environmental Data (Row 1)
 	SurfaceType     uint32  `json:"surfaceType"`     // enum
 	IndicatedSpeed  float32 `json:"indicatedSpeed"`  // knots
 	// Camera State
-	CameraState uint32 `json:"cameraState"` // enum: 2=Cockpit, 3=External/Chase, 4=Drone, etc.
-
-	// Aircraft Systems
-	ExternalPowerOn uint32 `json:"externalPowerOn"` // boolean as uint32
+	CameraState            uint32 `json:"cameraState"`            // enum: 2=Cockpit, 3=External/Chase, 4=Drone, etc.	// Aircraft Systems
+	ExternalPowerOn        uint32 `json:"externalPowerOn"`        // boolean as uint32
+	ExternalPowerAvailable uint32 `json:"externalPowerAvailable"` // boolean as uint32 (EXTERNAL POWER AVAILABLE)
+	// Battery Systems
+	Battery1Switch  uint32  `json:"battery1Switch"`  // boolean as uint32 (0/1 off/on)
+	Battery2Switch  uint32  `json:"battery2Switch"`  // boolean as uint32 (0/1 off/on)
+	Battery1Voltage float32 `json:"battery1Voltage"` // volts
+	Battery2Voltage float32 `json:"battery2Voltage"` // volts
+	Battery1Charge  float32 `json:"battery1Charge"`  // percentage
+	Battery2Charge  float32 `json:"battery2Charge"`  // percentage
 
 	LastUpdate string `json:"lastUpdate"`
 }

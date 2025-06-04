@@ -1032,7 +1032,9 @@ Key advanced topics covered:
 - **Production Patterns**: Resilient monitoring with automatic recovery
 - **Performance Optimization**: High-throughput processing and memory efficiency
 
-### Quick Advanced Example: Concurrent System Monitoring
+### Quick Advanced Example: Proper Concurrent System Monitoring
+
+**Important**: When using multiple goroutines with SimConnect, never have multiple goroutines read directly from the same message channel. Each message goes to only ONE goroutine, causing message loss. Use a fan-out pattern instead.
 
 ```go
 package main
@@ -1068,21 +1070,54 @@ func main() {
     for _, sys := range systems {
         sdk.RegisterSimVarDefinition(sys.id, sys.name, "feet", types.SIMCONNECT_DATATYPE_FLOAT32)
         sdk.RequestSimVarDataPeriodic(sys.id, sys.id*100, types.SIMCONNECT_PERIOD_SECOND)
-    }
-
-    // Single Listen() call - multiple goroutines can safely read from it
+    }    // Single Listen() call - shared by all processors
     messages := sdk.Listen()
     
+    // Use a fan-out pattern to ensure all processors get all messages
+    flightDataCh := make(chan interface{}, 100)
+    electricalCh := make(chan interface{}, 100)
+    
     var wg sync.WaitGroup
+    
+    // Message distributor - ensures all relevant messages reach all processors
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        defer close(flightDataCh)
+        defer close(electricalCh)
+        
+        for msg := range messages {
+            if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "SIMOBJECT_DATA" {
+                if data, exists := msgMap["parsed_data"]; exists {
+                    if simVar, ok := data.(*client.SimVarData); ok {
+                        // Send flight data to flight processor
+                        if simVar.DefineID <= 2 {
+                            select {
+                            case flightDataCh <- msg:
+                            default: // Don't block
+                            }
+                        }
+                        // Send electrical data to electrical processor
+                        if simVar.DefineID >= 3 {
+                            select {
+                            case electricalCh <- msg:
+                            default: // Don't block
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }()
     
     // Flight data processor
     wg.Add(1)
     go func() {
         defer wg.Done()
-        for msg := range messages {
-            if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "SIMOBJECT_DATA" {
+        for msg := range flightDataCh {
+            if msgMap, ok := msg.(map[string]any); ok {
                 if data, exists := msgMap["parsed_data"]; exists {
-                    if simVar, ok := data.(*client.SimVarData); ok && simVar.DefineID <= 2 {
+                    if simVar, ok := data.(*client.SimVarData); ok {
                         fmt.Printf("✈️ Flight Data - ID:%d Value:%.1f\n", simVar.DefineID, simVar.Value)
                     }
                 }
@@ -1094,10 +1129,10 @@ func main() {
     wg.Add(1)
     go func() {
         defer wg.Done()
-        for msg := range messages {
-            if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "SIMOBJECT_DATA" {
+        for msg := range electricalCh {
+            if msgMap, ok := msg.(map[string]any); ok {
                 if data, exists := msgMap["parsed_data"]; exists {
-                    if simVar, ok := data.(*client.SimVarData); ok && simVar.DefineID >= 3 {
+                    if simVar, ok := data.(*client.SimVarData); ok {
                         fmt.Printf("⚡ Electrical - ID:%d Value:%.0f\n", simVar.DefineID, simVar.Value)
                     }
                 }

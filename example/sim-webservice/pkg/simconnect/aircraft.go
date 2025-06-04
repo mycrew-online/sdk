@@ -37,7 +37,6 @@ func (mc *MonitorClient) ToggleExternalPowerHandler(w http.ResponseWriter, r *ht
 		http.Error(w, fmt.Sprintf("Failed to toggle external power: %v", err), http.StatusInternalServerError)
 		return
 	}
-
 	// Return success
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
@@ -46,21 +45,87 @@ func (mc *MonitorClient) ToggleExternalPowerHandler(w http.ResponseWriter, r *ht
 	})
 }
 
+// ToggleBattery1Handler handles toggling battery 1 in MSFS
+func (mc *MonitorClient) ToggleBattery1Handler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get current battery 1 switch state and toggle it
+	mc.mutex.RLock()
+	currentState := mc.currentData.Battery1Switch
+	mc.mutex.RUnlock()
+
+	// Toggle the state: 0 -> 1, 1 -> 0
+	newState := int32(1)
+	if currentState == 1 {
+		newState = 0
+	}
+
+	// Set the SimVar using the registered definition ID
+	if err := mc.sdk.SetSimVar(BATTERY1_SWITCH_DEFINE_ID, newState); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle battery 1: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Battery 1 toggled successfully",
+	})
+}
+
+// ToggleBattery2Handler handles toggling battery 2 in MSFS
+func (mc *MonitorClient) ToggleBattery2Handler(w http.ResponseWriter, r *http.Request) {
+	// Only allow POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get current battery 2 switch state and toggle it
+	mc.mutex.RLock()
+	currentState := mc.currentData.Battery2Switch
+	mc.mutex.RUnlock()
+
+	// Toggle the state: 0 -> 1, 1 -> 0
+	newState := int32(1)
+	if currentState == 1 {
+		newState = 0
+	}
+
+	// Set the SimVar using the registered definition ID
+	if err := mc.sdk.SetSimVar(BATTERY2_SWITCH_DEFINE_ID, newState); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to toggle battery 2: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Battery 2 toggled successfully",
+	})
+}
+
 // RegisterAircraftEvents registers aircraft control events with SimConnect
 func (mc *MonitorClient) RegisterAircraftEvents() error {
-	// Map the client event to the sim event
+	// Map external power event
 	if err := mc.sdk.MapClientEventToSimEvent(TOGGLE_EXTERNAL_POWER_EVENT_ID, "TOGGLE_EXTERNAL_POWER"); err != nil {
 		return fmt.Errorf("failed to map TOGGLE_EXTERNAL_POWER event: %v", err)
 	}
 
-	// Set notification group priority
-	if err := mc.sdk.SetNotificationGroupPriority(AIRCRAFT_NOTIFICATION_GROUP_ID, types.SIMCONNECT_GROUP_PRIORITY_HIGHEST); err != nil {
-		return fmt.Errorf("failed to set aircraft notification group priority: %v", err)
+	// Add external power event to the notification group
+	if err := mc.sdk.AddClientEventToNotificationGroup(AIRCRAFT_NOTIFICATION_GROUP_ID, TOGGLE_EXTERNAL_POWER_EVENT_ID, false); err != nil {
+		return fmt.Errorf("failed to add event %d to notification group: %v", TOGGLE_EXTERNAL_POWER_EVENT_ID, err)
 	}
 
-	// Add the event to the notification group
-	if err := mc.sdk.AddClientEventToNotificationGroup(AIRCRAFT_NOTIFICATION_GROUP_ID, TOGGLE_EXTERNAL_POWER_EVENT_ID, false); err != nil {
-		return fmt.Errorf("failed to add TOGGLE_EXTERNAL_POWER to notification group: %v", err)
+	// Set notification group priority after adding events
+	if err := mc.sdk.SetNotificationGroupPriority(AIRCRAFT_NOTIFICATION_GROUP_ID, types.SIMCONNECT_GROUP_PRIORITY_HIGHEST); err != nil {
+		return fmt.Errorf("failed to set aircraft notification group priority: %v", err)
 	}
 
 	return nil
