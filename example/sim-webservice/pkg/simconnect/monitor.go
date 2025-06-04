@@ -156,16 +156,14 @@ func (mc *MonitorClient) Connect() error {
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
 		return fmt.Errorf("failed to register AMBIENT TEMPERATURE: %v", err)
-	}
-
-	// Ambient Pressure
+	} // Sea Level Pressure (millibars)
 	if err := mc.sdk.RegisterSimVarDefinition(
 		PRESSURE_DEFINE_ID,
-		"AMBIENT PRESSURE",
-		"Inches of mercury",
+		"SEA LEVEL PRESSURE",
+		"Millibars",
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
-		return fmt.Errorf("failed to register AMBIENT PRESSURE: %v", err)
+		return fmt.Errorf("failed to register SEA LEVEL PRESSURE: %v", err)
 	}
 
 	// Wind Speed
@@ -248,15 +246,14 @@ func (mc *MonitorClient) Connect() error {
 	); err != nil {
 		return fmt.Errorf("failed to register MAGVAR: %v", err)
 	}
-
-	// Sea Level Pressure
+	// Barometer Pressure (inches of mercury)
 	if err := mc.sdk.RegisterSimVarDefinition(
 		SEA_LEVEL_PRESS_DEFINE_ID,
-		"SEA LEVEL PRESSURE",
-		"Millibars",
+		"BAROMETER PRESSURE",
+		"Inches of mercury",
 		types.SIMCONNECT_DATATYPE_FLOAT32,
 	); err != nil {
-		return fmt.Errorf("failed to register SEA LEVEL PRESSURE: %v", err)
+		return fmt.Errorf("failed to register BAROMETER PRESSURE: %v", err)
 	}
 	// Ambient Density
 	if err := mc.sdk.RegisterSimVarDefinition(
@@ -766,13 +763,12 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 	default:
 		return // Skip if we can't convert
 	}
-
 	// Update the appropriate field
 	switch data.DefineID { // Core Environmental Variables (Row 1)
 	case TEMP_DEFINE_ID:
 		mc.currentData.Temperature = floatValue
 	case PRESSURE_DEFINE_ID:
-		mc.currentData.Pressure = floatValue
+		mc.currentData.SeaLevelPressure = floatValue
 	case WIND_SPEED_DEFINE_ID:
 		mc.currentData.WindSpeed = floatValue
 	case WIND_DIR_DEFINE_ID:
@@ -813,7 +809,7 @@ func (mc *MonitorClient) updateMonitorData(data *client.SimVarData) {
 	case MAGVAR_DEFINE_ID:
 		mc.currentData.MagVar = floatValue
 	case SEA_LEVEL_PRESS_DEFINE_ID:
-		mc.currentData.SeaLevelPress = floatValue
+		mc.currentData.BarometerPressure = floatValue
 	case AMBIENT_DENSITY_DEFINE_ID:
 		mc.currentData.AmbientDensity = floatValue
 	case REALISM_DEFINE_ID:

@@ -23,11 +23,12 @@ async function updateMonitorData() {
         const response = await fetch('/api/monitor');
         const data = await response.json();        // Update Core Environmental Data (Row 1)
         document.getElementById('temperature').textContent = data.temperature.toFixed(1);
-        document.getElementById('pressure').textContent = data.pressure.toFixed(2);
+          // Convert pressure from millibars (SEA LEVEL PRESSURE) to inHg for display
+        const pressureInHg = (data.seaLevelPressure || 0) / 33.8639;
+        document.getElementById('pressure').textContent = pressureInHg.toFixed(2);
         
-        // Update pressure in hPa (1 inHg = 33.8639 hPa)
-        const pressureHpa = (data.pressure || 0) * 33.8639;
-        document.getElementById('pressureHpa').textContent = pressureHpa.toFixed(1);
+        // Update pressure in hPa (millibars) - direct display since data.seaLevelPressure is now in millibars
+        document.getElementById('pressureHpa').textContent = (data.seaLevelPressure || 0).toFixed(1);
         
         document.getElementById('windSpeed').textContent = data.windSpeed.toFixed(1);
         document.getElementById('windDirection').textContent = Math.round(data.windDirection);
@@ -69,10 +70,10 @@ async function updateMonitorData() {
         document.getElementById('precipRate').textContent = (data.precipRate || 0).toFixed(1);
         
         document.getElementById('densityAltitude').textContent = Math.round(data.densityAltitude || 0);        document.getElementById('groundAltitude').textContent = Math.round(data.groundAltitude || 0);
-        
-        // Update Additional Environmental Data
-        document.getElementById('magVar').textContent = (data.magVar || 0).toFixed(1);
-        document.getElementById('seaLevelPress').textContent = (data.seaLevelPress || 0).toFixed(1);        document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
+          // Update Additional Environmental Data
+        document.getElementById('magVar').textContent = (data.magVar || 0).toFixed(1);        // barometerPressure is now BAROMETER PRESSURE in inHg - display directly
+        document.getElementById('seaLevelPress').textContent = (data.barometerPressure || 0).toFixed(2);
+        document.getElementById('ambientDensity').textContent = (data.ambientDensity || 0).toFixed(4);
         document.getElementById('realism').textContent = (data.realism || 0).toFixed(0);
         
         // Update Position & Navigation Data (Row 3)
