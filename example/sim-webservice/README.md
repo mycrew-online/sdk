@@ -2,6 +2,8 @@
 
 A comprehensive real-time web interface for monitoring and controlling Microsoft Flight Simulator flight data using the SimConnect SDK.
 
+![image](https://github.com/user-attachments/assets/7d18d2a8-aafe-4a7c-a391-b06c4028e3f7)
+
 ## Features
 
 - **Real-time Flight Monitoring**: View current flight conditions with 36+ variables including environmental data, position, navigation, aircraft status, and simulation time
