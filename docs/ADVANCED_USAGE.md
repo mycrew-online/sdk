@@ -37,14 +37,14 @@ messages := sdk.Listen()
 go func() {
     for msg := range messages {
         // This goroutine will miss messages that go to the other goroutine
-        processMessage(msg, "Worker-1")
+        processMessageTypeOne(msg, "Worker-1")
     }
 }()
 
 go func() {
     for msg := range messages {
         // This goroutine will also miss messages that go to the other goroutine
-        processMessage(msg, "Worker-2")
+        processMessageTypeTwo(msg, "Worker-2")
     }
 }()
 
