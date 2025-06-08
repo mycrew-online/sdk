@@ -252,13 +252,20 @@ func (e *Engine) parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32)
 		"data":       ppData,
 		"size_bytes": pcbData,
 	}
-
 	// For SIMOBJECT_DATA, add the parsed values directly
 	if recv.DwID == types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA {
 		if simVarData := e.parseSimObjectData(ppData, pcbData); simVarData != nil {
 			msg["parsed_data"] = simVarData
 		}
 	}
+
+	// For SIMOBJECT_DATA_BYTYPE, add the parsed values directly
+	if recv.DwID == types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE {
+		if simVarData := e.parseSimObjectData(ppData, pcbData); simVarData != nil {
+			msg["parsed_data"] = simVarData
+		}
+	}
+
 	// For EXCEPTION, add the parsed exception data
 	if recv.DwID == types.SIMCONNECT_RECV_ID_EXCEPTION {
 		if pcbData >= uint32(unsafe.Sizeof(types.SIMCONNECT_RECV_EXCEPTION{})) {
@@ -287,6 +294,41 @@ func (e *Engine) parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32)
 		}
 	}
 
+	// For EVENT_EX1, add the parsed extended event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT_EX1 {
+		if eventExData := e.parseEventExData(ppData, pcbData); eventExData != nil {
+			msg["event_ex"] = eventExData
+		}
+	}
+
+	// For ASSIGNED_OBJECT_ID, add the parsed object data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID {
+		if objectData := e.parseAssignedObjectData(ppData, pcbData); objectData != nil {
+			msg["assigned_object"] = objectData
+		}
+	}
+
+	// For SYSTEM_STATE, add the parsed system state data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_SYSTEM_STATE {
+		if stateData := e.parseSystemStateData(ppData, pcbData); stateData != nil {
+			msg["system_state"] = stateData
+		}
+	}
+
+	// For CLIENT_DATA, add the parsed client data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_CLIENT_DATA {
+		if clientData := e.parseClientData(ppData, pcbData); clientData != nil {
+			msg["client_data"] = clientData
+		}
+	}
+
+	// For CUSTOM_ACTION, add the parsed custom action data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_CUSTOM_ACTION {
+		if actionData := e.parseCustomActionData(ppData, pcbData); actionData != nil {
+			msg["custom_action"] = actionData
+		}
+	}
+
 	return msg
 }
 
@@ -303,14 +345,74 @@ func getMessageTypeName(id types.SimConnectRecvID) string {
 		return "QUIT"
 	case types.SIMCONNECT_RECV_ID_EVENT:
 		return "EVENT"
+	case types.SIMCONNECT_RECV_ID_EVENT_EX1:
+		return "EVENT_EX1"
+	case types.SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE:
+		return "EVENT_OBJECT_ADDREMOVE"
+	case types.SIMCONNECT_RECV_ID_EVENT_FILENAME:
+		return "EVENT_FILENAME"
+	case types.SIMCONNECT_RECV_ID_EVENT_FRAME:
+		return "EVENT_FRAME"
 	case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
 		return "SIMOBJECT_DATA"
+	case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE:
+		return "SIMOBJECT_DATA_BYTYPE"
+	case types.SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID:
+		return "ASSIGNED_OBJECT_ID"
+	case types.SIMCONNECT_RECV_ID_RESERVED_KEY:
+		return "RESERVED_KEY"
+	case types.SIMCONNECT_RECV_ID_CUSTOM_ACTION:
+		return "CUSTOM_ACTION"
 	case types.SIMCONNECT_RECV_ID_SYSTEM_STATE:
 		return "SYSTEM_STATE"
+	case types.SIMCONNECT_RECV_ID_CLIENT_DATA:
+		return "CLIENT_DATA"
+	case types.SIMCONNECT_RECV_ID_WEATHER_OBSERVATION:
+		return "WEATHER_OBSERVATION"
+	case types.SIMCONNECT_RECV_ID_CLOUD_STATE:
+		return "CLOUD_STATE"
+	case types.SIMCONNECT_RECV_ID_EVENT_WEATHER_MODE:
+		return "EVENT_WEATHER_MODE"
+	case types.SIMCONNECT_RECV_ID_AIRPORT_LIST:
+		return "AIRPORT_LIST"
+	case types.SIMCONNECT_RECV_ID_VOR_LIST:
+		return "VOR_LIST"
+	case types.SIMCONNECT_RECV_ID_NDB_LIST:
+		return "NDB_LIST"
+	case types.SIMCONNECT_RECV_ID_WAYPOINT_LIST:
+		return "WAYPOINT_LIST"
+	case types.SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_SERVER_STARTED:
+		return "EVENT_MULTIPLAYER_SERVER_STARTED"
+	case types.SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_CLIENT_STARTED:
+		return "EVENT_MULTIPLAYER_CLIENT_STARTED"
+	case types.SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_SESSION_ENDED:
+		return "EVENT_MULTIPLAYER_SESSION_ENDED"
+	case types.SIMCONNECT_RECV_ID_EVENT_RACE_END:
+		return "EVENT_RACE_END"
+	case types.SIMCONNECT_RECV_ID_EVENT_RACE_LAP:
+		return "EVENT_RACE_LAP"
+	case types.SIMCONNECT_RECV_ID_PICK:
+		return "PICK"
+	case types.SIMCONNECT_RECV_ID_FACILITY_DATA:
+		return "FACILITY_DATA"
+	case types.SIMCONNECT_RECV_ID_FACILITY_DATA_END:
+		return "FACILITY_DATA_END"
+	case types.SIMCONNECT_RECV_ID_FACILITY_MINIMAL_LIST:
+		return "FACILITY_MINIMAL_LIST"
+	case types.SIMCONNECT_RECV_ID_JETWAY_DATA:
+		return "JETWAY_DATA"
+	case types.SIMCONNECT_RECV_ID_CONTROLLERS_LIST:
+		return "CONTROLLERS_LIST"
+	case types.SIMCONNECT_RECV_ID_ACTION_CALLBACK:
+		return "ACTION_CALLBACK"
 	case types.SIMCONNECT_RECV_ID_ENUMERATE_INPUT_EVENTS:
 		return "ENUMERATE_INPUT_EVENTS"
+	case types.SIMCONNECT_RECV_ID_GET_INPUT_EVENT:
+		return "GET_INPUT_EVENT"
 	case types.SIMCONNECT_RECV_ID_SUBSCRIBE_INPUT_EVENT:
 		return "SUBSCRIBE_INPUT_EVENT"
+	case types.SIMCONNECT_RECV_ID_ENUMERATE_INPUT_EVENT_PARAMS:
+		return "ENUMERATE_INPUT_EVENT_PARAMS"
 	default:
 		return "UNKNOWN"
 	}
@@ -332,11 +434,158 @@ func (e *Engine) parseEventData(ppData uintptr, pcbData uint32) *types.EventData
 		GroupID:   eventData.UGroupID,
 		EventID:   eventData.UEventID,
 		EventData: eventData.DwData,
-		//EventType: "unknown", // Default type
+		EventType: eventData.DwID, // Default type
 	}
 
 	// Classify event type and resolve event name based on EventID
 	//result.EventType, result.EventName = classifyEvent(eventData.UEventID, eventData.UGroupID)
+
+	return result
+}
+
+// parseEventExData extracts extended event data from SIMCONNECT_RECV_EVENT_EX1 message
+func (e *Engine) parseEventExData(ppData uintptr, pcbData uint32) *types.EventExData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_EVENT_EX1 structure
+	eventData := (*types.SIMCONNECT_RECV_EVENT_EX1)(unsafe.Pointer(ppData))
+	if eventData.DwID != types.SIMCONNECT_RECV_ID_EVENT_EX1 {
+		return nil
+	}
+
+	// Create extended event data structure for channel message
+	result := &types.EventExData{
+		GroupID: eventData.UGroupID,
+		EventID: eventData.UEventID,
+		Data: []uint32{
+			eventData.DwData0,
+			eventData.DwData1,
+			eventData.DwData2,
+			eventData.DwData3,
+			eventData.DwData4,
+		},
+	}
+
+	return result
+}
+
+// parseAssignedObjectData extracts assigned object ID data from SIMCONNECT_RECV_ASSIGNED_OBJECT_ID message
+func (e *Engine) parseAssignedObjectData(ppData uintptr, pcbData uint32) *types.AssignedObjectData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_ASSIGNED_OBJECT_ID structure
+	objData := (*types.SIMCONNECT_RECV_ASSIGNED_OBJECT_ID)(unsafe.Pointer(ppData))
+	if objData.DwID != types.SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID {
+		return nil
+	}
+
+	// Create assigned object data structure for channel message
+	result := &types.AssignedObjectData{
+		ObjectID:  objData.DwObjectID,
+		RequestID: objData.DwRequestID,
+	}
+
+	return result
+}
+
+// parseSystemStateData extracts system state data from SIMCONNECT_RECV_SYSTEM_STATE message
+func (e *Engine) parseSystemStateData(ppData uintptr, pcbData uint32) *types.SystemStateData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_SYSTEM_STATE structure
+	stateData := (*types.SIMCONNECT_RECV_SYSTEM_STATE)(unsafe.Pointer(ppData))
+	if stateData.DwID != types.SIMCONNECT_RECV_ID_SYSTEM_STATE {
+		return nil
+	}
+
+	// Convert float from uint32 representation
+	floatValue := *(*float32)(unsafe.Pointer(&stateData.DwFloat))
+
+	// Convert string from byte array (find null terminator)
+	stringValue := ""
+	for i, b := range stateData.SzString {
+		if b == 0 {
+			stringValue = string(stateData.SzString[:i])
+			break
+		}
+	}
+
+	// Create system state data structure for channel message
+	result := &types.SystemStateData{
+		RequestID:    stateData.DwRequestID,
+		IntegerValue: stateData.DwInteger,
+		FloatValue:   floatValue,
+		StringValue:  stringValue,
+	}
+
+	return result
+}
+
+// parseClientData extracts client data from SIMCONNECT_RECV_CLIENT_DATA message
+func (e *Engine) parseClientData(ppData uintptr, pcbData uint32) *types.ClientData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_CLIENT_DATA structure
+	clientData := (*types.SIMCONNECT_RECV_CLIENT_DATA)(unsafe.Pointer(ppData))
+	if clientData.DwID != types.SIMCONNECT_RECV_ID_CLIENT_DATA {
+		return nil
+	}
+
+	// For client data, we need to parse the actual data based on the definition
+	// For now, we'll store the raw data pointer and size
+	var data interface{}
+	headerSize := unsafe.Sizeof(*clientData)
+	if pcbData > uint32(headerSize) {
+		// Calculate data location and available bytes
+		dataPtr := ppData + uintptr(headerSize)
+		dataLen := pcbData - uint32(headerSize)
+
+		// For basic implementation, store as byte slice
+		dataBytes := make([]byte, dataLen)
+		for i := uint32(0); i < dataLen; i++ {
+			dataBytes[i] = *(*byte)(unsafe.Pointer(dataPtr + uintptr(i)))
+		}
+		data = dataBytes
+	}
+
+	// Create client data structure for channel message
+	result := &types.ClientData{
+		RequestID:    clientData.DwRequestID,
+		DefineID:     clientData.DwDefineID,
+		EntryNumber:  clientData.DwEntryNumber,
+		TotalEntries: clientData.DwOutOf,
+		Data:         data,
+	}
+
+	return result
+}
+
+// parseCustomActionData extracts custom action data from SIMCONNECT_RECV_CUSTOM_ACTION message
+func (e *Engine) parseCustomActionData(ppData uintptr, pcbData uint32) *types.CustomActionData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_CUSTOM_ACTION structure
+	actionData := (*types.SIMCONNECT_RECV_CUSTOM_ACTION)(unsafe.Pointer(ppData))
+	if actionData.DwID != types.SIMCONNECT_RECV_ID_CUSTOM_ACTION {
+		return nil
+	}
+
+	// Create custom action data structure for channel message
+	result := &types.CustomActionData{
+		GuidRequestID: actionData.DwGuidRequestID,
+		UserRequestID: actionData.DwURequestID,
+		Result:        actionData.DwResult,
+	}
 
 	return result
 }
