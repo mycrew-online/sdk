@@ -34,46 +34,77 @@ func (e *Engine) parseSimObjectData(ppData uintptr, pcbData uint32) *SimVarData 
 		// Fallback to FLOAT32 if not found
 		dataType = types.SIMCONNECT_DATATYPE_FLOAT32
 	}
-
 	var value interface{}
-	// Parse based on the registered data type
+	headerSize := unsafe.Sizeof(*simObjData)
+
+	// Parse based on the registered data type - now supports all 17 SIMCONNECT_DATATYPE values
 	switch dataType {
+	// === NUMERIC TYPES ===
 	case types.SIMCONNECT_DATATYPE_FLOAT32:
 		// For FLOAT32: 4-byte value stored in DwData field
 		float32Value := *(*float32)(unsafe.Pointer(&simObjData.DwData))
 		value = float64(float32Value)
+
+	case types.SIMCONNECT_DATATYPE_FLOAT64:
+		// For FLOAT64: 8-byte double precision value after header
+		if pcbData >= uint32(headerSize)+8 {
+			dataPtr := ppData + uintptr(headerSize)
+			value = *(*float64)(unsafe.Pointer(dataPtr))
+		} else {
+			value = float64(0.0)
+		}
+
 	case types.SIMCONNECT_DATATYPE_INT32:
 		// For INT32: 4-byte integer stored in DwData field
 		int32Value := *(*int32)(unsafe.Pointer(&simObjData.DwData))
-		value = int32Value // Store as actual int32, not converted to float64
+		value = int32Value
+
+	case types.SIMCONNECT_DATATYPE_INT64:
+		// For INT64: 8-byte integer after header
+		if pcbData >= uint32(headerSize)+8 {
+			dataPtr := ppData + uintptr(headerSize)
+			value = *(*int64)(unsafe.Pointer(dataPtr))
+		} else {
+			value = int64(0)
+		}
+
+	// === STRING TYPES ===
 	case types.SIMCONNECT_DATATYPE_STRINGV:
 		// For STRINGV: Variable-length string data comes after the header
-		// The string starts immediately after the SIMCONNECT_RECV_SIMOBJECT_DATA structure
-		headerSize := unsafe.Sizeof(*simObjData)
-		if pcbData > uint32(headerSize) {
-			// Calculate string data location and available bytes
-			stringDataPtr := ppData + uintptr(headerSize)
-			stringDataLen := pcbData - uint32(headerSize)
+		value = e.parseVariableString(ppData, pcbData, headerSize)
 
-			// Read the null-terminated string
-			stringBytes := make([]byte, stringDataLen)
-			for i := uint32(0); i < stringDataLen; i++ {
-				b := *(*byte)(unsafe.Pointer(stringDataPtr + uintptr(i)))
-				if b == 0 {
-					// Found null terminator
-					stringBytes = stringBytes[:i]
-					break
-				}
-				stringBytes[i] = b
-			}
-			value = string(stringBytes)
-		} else {
-			value = "" // Empty string if no data
-		}
+	case types.SIMCONNECT_DATATYPE_STRING8:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 8)
+	case types.SIMCONNECT_DATATYPE_STRING32:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 32)
+	case types.SIMCONNECT_DATATYPE_STRING64:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 64)
+	case types.SIMCONNECT_DATATYPE_STRING128:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 128)
+	case types.SIMCONNECT_DATATYPE_STRING256:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 256)
+	case types.SIMCONNECT_DATATYPE_STRING260:
+		value = e.parseFixedString(ppData, pcbData, headerSize, 260)
+
+	// === STRUCTURE TYPES ===
+	case types.SIMCONNECT_DATATYPE_INITPOSITION:
+		value = e.parseInitPosition(ppData, pcbData, headerSize)
+	case types.SIMCONNECT_DATATYPE_MARKERSTATE:
+		value = e.parseMarkerState(ppData, pcbData, headerSize)
+	case types.SIMCONNECT_DATATYPE_WAYPOINT:
+		value = e.parseWaypoint(ppData, pcbData, headerSize)
+	case types.SIMCONNECT_DATATYPE_LATLONALT:
+		value = e.parseLatLonAlt(ppData, pcbData, headerSize)
+	case types.SIMCONNECT_DATATYPE_XYZ:
+		value = e.parseXYZ(ppData, pcbData, headerSize)
+
+	case types.SIMCONNECT_DATATYPE_INVALID:
+		// Invalid data type - return nil value
+		value = nil
+
 	default:
-		// Fallback to FLOAT32 for unknown types
-		float32Value := *(*float32)(unsafe.Pointer(&simObjData.DwData))
-		value = float64(float32Value)
+		// Enhanced fallback with type information for debugging
+		value = e.parseUnknownType(ppData, pcbData, headerSize, dataType)
 	}
 
 	return &SimVarData{
@@ -588,4 +619,174 @@ func (e *Engine) parseCustomActionData(ppData uintptr, pcbData uint32) *types.Cu
 	}
 
 	return result
+}
+
+// Helper functions for parsing different SimConnect data types
+
+// parseVariableString parses SIMCONNECT_DATATYPE_STRINGV - variable length string
+func (e *Engine) parseVariableString(ppData uintptr, pcbData uint32, headerSize uintptr) string {
+	if pcbData <= uint32(headerSize) {
+		return ""
+	}
+
+	// Calculate string data location and available bytes
+	stringDataPtr := ppData + uintptr(headerSize)
+	stringDataLen := pcbData - uint32(headerSize)
+
+	// Read the null-terminated string
+	stringBytes := make([]byte, stringDataLen)
+	for i := uint32(0); i < stringDataLen; i++ {
+		b := *(*byte)(unsafe.Pointer(stringDataPtr + uintptr(i)))
+		if b == 0 {
+			// Found null terminator
+			stringBytes = stringBytes[:i]
+			break
+		}
+		stringBytes[i] = b
+	}
+	return string(stringBytes)
+}
+
+// parseFixedString parses fixed-length string types (STRING8, STRING32, etc.)
+func (e *Engine) parseFixedString(ppData uintptr, pcbData uint32, headerSize uintptr, maxLen int) string {
+	expectedSize := uint32(headerSize) + uint32(maxLen)
+	if pcbData < expectedSize {
+		// Not enough data, return empty string
+		return ""
+	}
+
+	// Read fixed-length string data
+	stringDataPtr := ppData + uintptr(headerSize)
+	stringBytes := make([]byte, maxLen)
+
+	for i := 0; i < maxLen; i++ {
+		b := *(*byte)(unsafe.Pointer(stringDataPtr + uintptr(i)))
+		if b == 0 {
+			// Found null terminator
+			stringBytes = stringBytes[:i]
+			break
+		}
+		stringBytes[i] = b
+	}
+
+	return string(stringBytes)
+}
+
+// parseInitPosition parses SIMCONNECT_DATATYPE_INITPOSITION structure
+func (e *Engine) parseInitPosition(ppData uintptr, pcbData uint32, headerSize uintptr) *types.InitPosition {
+	expectedSize := uint32(headerSize) + uint32(unsafe.Sizeof(types.InitPosition{}))
+	if pcbData < expectedSize {
+		return nil
+	}
+
+	dataPtr := ppData + uintptr(headerSize)
+	initPos := (*types.InitPosition)(unsafe.Pointer(dataPtr))
+
+	// Return a copy to avoid pointer issues
+	return &types.InitPosition{
+		Latitude:  initPos.Latitude,
+		Longitude: initPos.Longitude,
+		Altitude:  initPos.Altitude,
+		Pitch:     initPos.Pitch,
+		Bank:      initPos.Bank,
+		Heading:   initPos.Heading,
+		OnGround:  initPos.OnGround,
+		Airspeed:  initPos.Airspeed,
+	}
+}
+
+// parseMarkerState parses SIMCONNECT_DATATYPE_MARKERSTATE structure
+func (e *Engine) parseMarkerState(ppData uintptr, pcbData uint32, headerSize uintptr) *types.MarkerState {
+	expectedSize := uint32(headerSize) + uint32(unsafe.Sizeof(types.MarkerState{}))
+	if pcbData < expectedSize {
+		return nil
+	}
+
+	dataPtr := ppData + uintptr(headerSize)
+	marker := (*types.MarkerState)(unsafe.Pointer(dataPtr))
+
+	// Return a copy to avoid pointer issues
+	result := &types.MarkerState{
+		Latitude:  marker.Latitude,
+		Longitude: marker.Longitude,
+		Altitude:  marker.Altitude,
+		Flags:     marker.Flags,
+		Heading:   marker.Heading,
+		Speed:     marker.Speed,
+		Bank:      marker.Bank,
+		Pitch:     marker.Pitch,
+	}
+
+	// Copy the name byte array
+	copy(result.Name[:], marker.Name[:])
+
+	return result
+}
+
+// parseWaypoint parses SIMCONNECT_DATATYPE_WAYPOINT structure
+func (e *Engine) parseWaypoint(ppData uintptr, pcbData uint32, headerSize uintptr) *types.Waypoint {
+	expectedSize := uint32(headerSize) + uint32(unsafe.Sizeof(types.Waypoint{}))
+	if pcbData < expectedSize {
+		return nil
+	}
+
+	dataPtr := ppData + uintptr(headerSize)
+	waypoint := (*types.Waypoint)(unsafe.Pointer(dataPtr))
+
+	// Return a copy to avoid pointer issues
+	return &types.Waypoint{
+		Latitude:  waypoint.Latitude,
+		Longitude: waypoint.Longitude,
+		Altitude:  waypoint.Altitude,
+		Flags:     waypoint.Flags,
+		Speed:     waypoint.Speed,
+		Throttle:  waypoint.Throttle,
+	}
+}
+
+// parseLatLonAlt parses SIMCONNECT_DATATYPE_LATLONALT structure
+func (e *Engine) parseLatLonAlt(ppData uintptr, pcbData uint32, headerSize uintptr) *types.LatLonAlt {
+	expectedSize := uint32(headerSize) + uint32(unsafe.Sizeof(types.LatLonAlt{}))
+	if pcbData < expectedSize {
+		return nil
+	}
+
+	dataPtr := ppData + uintptr(headerSize)
+	latLonAlt := (*types.LatLonAlt)(unsafe.Pointer(dataPtr))
+
+	// Return a copy to avoid pointer issues
+	return &types.LatLonAlt{
+		Latitude:  latLonAlt.Latitude,
+		Longitude: latLonAlt.Longitude,
+		Altitude:  latLonAlt.Altitude,
+	}
+}
+
+// parseXYZ parses SIMCONNECT_DATATYPE_XYZ structure
+func (e *Engine) parseXYZ(ppData uintptr, pcbData uint32, headerSize uintptr) *types.XYZ {
+	expectedSize := uint32(headerSize) + uint32(unsafe.Sizeof(types.XYZ{}))
+	if pcbData < expectedSize {
+		return nil
+	}
+
+	dataPtr := ppData + uintptr(headerSize)
+	xyz := (*types.XYZ)(unsafe.Pointer(dataPtr))
+
+	// Return a copy to avoid pointer issues
+	return &types.XYZ{
+		X: xyz.X,
+		Y: xyz.Y,
+		Z: xyz.Z,
+	}
+}
+
+// parseUnknownType handles unknown or unsupported data types with enhanced debugging
+func (e *Engine) parseUnknownType(ppData uintptr, pcbData uint32, headerSize uintptr, dataType types.SimConnectDataType) interface{} {
+	// For debugging: Log the unknown type (commented out to avoid stdout interference)
+	// fmt.Printf("⚠️ Unknown/unsupported data type: %d, falling back to FLOAT32\n", dataType)
+
+	// Fallback to FLOAT32 parsing for unknown types
+	simObjData := (*types.SIMCONNECT_RECV_SIMOBJECT_DATA)(unsafe.Pointer(ppData))
+	float32Value := *(*float32)(unsafe.Pointer(&simObjData.DwData))
+	return float64(float32Value)
 }
