@@ -24,11 +24,13 @@ func NewWithCustomDLL(name string, path string) Connection {
 		IsConnected: false,
 	}
 	client := &Engine{
-		dll:              dll(path),
-		name:             name,
-		system:           state,
-		stream:           make(chan any, DEFAULT_STREAM_BUFFER_SIZE), // Buffered channel for message processing
-		dataTypeRegistry: make(map[uint32]types.SimConnectDataType),  // Initialize data type tracking
+		dll:                   dll(path),
+		name:                  name,
+		system:                state,
+		stream:                make(chan any, DEFAULT_STREAM_BUFFER_SIZE), // Buffered channel for message processing
+		dataTypeRegistry:      make(map[uint32]types.SimConnectDataType),  // Initialize data type tracking
+		unhandledMessageStats: make(map[types.SimConnectRecvID]int64),     // Initialize unhandled message tracking
+		lastUnhandledCheck:    0,                                          // Initialize timestamp for unhandled message monitoring
 	}
 
 	// TODO Error handling for DLL loading???

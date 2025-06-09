@@ -25,9 +25,12 @@ type Engine struct {
 	contextOnce sync.Once    // Ensures context initialization happens only once
 	closeOnce   sync.Once    // Ensures Close() is called only once
 	isListening bool         // Protected by mu, tracks if listening is active
-
 	// Data type tracking for sim variables
 	dataTypeRegistry map[uint32]types.SimConnectDataType // DefineID → DataType mapping
+
+	// Unhandled message tracking for monitoring and debugging
+	unhandledMessageStats map[types.SimConnectRecvID]int64 // MessageType → Count
+	lastUnhandledCheck    int64                            // Timestamp of last stats check
 }
 
 type SystemState struct {

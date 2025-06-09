@@ -199,3 +199,87 @@ const (
 	SIMCONNECT_RECV_ID_SUBSCRIBE_INPUT_EVENT                                    // Subscribe to input event
 	SIMCONNECT_RECV_ID_ENUMERATE_INPUT_EVENT_PARAMS                             // Enumerate input event parameters
 )
+
+// === NEW CRITICAL EVENT STRUCTURES ===
+
+// SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE represents object add/remove events
+// Used for tracking when AI aircraft, vehicles, or other objects are added/removed from simulation
+type SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	UEventID        uint32 // Event ID for the object add/remove event
+	DwData          uint32 // Object ID of the added/removed object
+}
+
+// ObjectAddRemoveData represents parsed object add/remove event for channel messages
+type ObjectAddRemoveData struct {
+	EventID  uint32 `json:"event_id"`  // ID of the add/remove event
+	ObjectID uint32 `json:"object_id"` // ID of the object that was added/removed
+	Action   string `json:"action"`    // "added" or "removed"
+}
+
+// SIMCONNECT_RECV_EVENT_FILENAME represents filename-related events
+// Used for tracking flight plan loads, aircraft model changes, etc.
+type SIMCONNECT_RECV_EVENT_FILENAME struct {
+	SIMCONNECT_RECV           // Inherits from base structure
+	UEventID        uint32    // Event ID for the filename event
+	DwFlags         uint32    // Flags associated with the filename event
+	DwGroupID       uint32    // Group ID for the event
+	SzFileName      [260]byte // Filename associated with the event
+}
+
+// FilenameEventData represents parsed filename event for channel messages
+type FilenameEventData struct {
+	EventID  uint32 `json:"event_id"` // ID of the filename event
+	Flags    uint32 `json:"flags"`    // Event flags
+	GroupID  uint32 `json:"group_id"` // Group ID
+	Filename string `json:"filename"` // The filename associated with the event
+}
+
+// SIMCONNECT_RECV_EVENT_FRAME represents frame timing events
+// Used for frame-based notifications and timing-sensitive operations
+type SIMCONNECT_RECV_EVENT_FRAME struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwFrameRate     uint32 // Current frame rate
+	DwSimSpeed      uint32 // Current simulation speed multiplier
+}
+
+// FrameEventData represents parsed frame event for channel messages
+type FrameEventData struct {
+	FrameRate uint32 `json:"frame_rate"` // Current frame rate (frames per second)
+	SimSpeed  uint32 `json:"sim_speed"`  // Simulation speed multiplier
+}
+
+// SIMCONNECT_RECV_FACILITY_DATA represents facility (airport/navigation) data
+// Used for receiving information about airports, VORs, NDBs, etc.
+type SIMCONNECT_RECV_FACILITY_DATA struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwRequestID     uint32 // ID of the original request
+	DwArraySize     uint32 // Number of facilities in the data
+	DwEntryNumber   uint32 // Index of this entry (1-based)
+	DwOutOf         uint32 // Total number of entries
+}
+
+// FacilityData represents parsed facility data for channel messages
+type FacilityData struct {
+	RequestID    uint32      `json:"request_id"`    // ID of the original request
+	ArraySize    uint32      `json:"array_size"`    // Number of facilities
+	EntryNumber  uint32      `json:"entry_number"`  // Index of this entry
+	TotalEntries uint32      `json:"total_entries"` // Total number of entries
+	Data         interface{} `json:"data"`          // The actual facility data
+}
+
+// SIMCONNECT_RECV_PICK represents mouse pick events in the 3D world
+// Used for detecting user interactions with objects in the simulator
+type SIMCONNECT_RECV_PICK struct {
+	SIMCONNECT_RECV        // Inherits from base structure
+	DwObjectID      uint32 // ID of the picked object
+	DwPickType      uint32 // Type of pick event
+	DwPickSource    uint32 // Source of the pick (mouse, etc.)
+}
+
+// PickEventData represents parsed pick event for channel messages
+type PickEventData struct {
+	ObjectID   uint32 `json:"object_id"`   // ID of the picked object
+	PickType   uint32 `json:"pick_type"`   // Type of pick event
+	PickSource uint32 `json:"pick_source"` // Source of the pick
+}

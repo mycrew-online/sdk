@@ -352,11 +352,63 @@ func (e *Engine) parseSimConnectToChannelMessage(ppData uintptr, pcbData uint32)
 			msg["client_data"] = clientData
 		}
 	}
-
 	// For CUSTOM_ACTION, add the parsed custom action data
 	if recv.DwID == types.SIMCONNECT_RECV_ID_CUSTOM_ACTION {
 		if actionData := e.parseCustomActionData(ppData, pcbData); actionData != nil {
 			msg["custom_action"] = actionData
+		}
+	}
+
+	// === NEW CRITICAL EVENT PARSERS ===
+
+	// For EVENT_OBJECT_ADDREMOVE, add the parsed object event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE {
+		if objData := e.parseObjectAddRemoveData(ppData, pcbData); objData != nil {
+			msg["object_event"] = objData
+		}
+	}
+
+	// For EVENT_FILENAME, add the parsed filename event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT_FILENAME {
+		if filenameData := e.parseFilenameEventData(ppData, pcbData); filenameData != nil {
+			msg["filename_event"] = filenameData
+		}
+	}
+
+	// For EVENT_FRAME, add the parsed frame event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_EVENT_FRAME {
+		if frameData := e.parseFrameEventData(ppData, pcbData); frameData != nil {
+			msg["frame_event"] = frameData
+		}
+	}
+
+	// For FACILITY_DATA, add the parsed facility data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_FACILITY_DATA {
+		if facilityData := e.parseFacilityData(ppData, pcbData); facilityData != nil {
+			msg["facility_data"] = facilityData
+		}
+	}
+
+	// For PICK events, add the parsed pick event data
+	if recv.DwID == types.SIMCONNECT_RECV_ID_PICK {
+		if pickData := e.parsePickEventData(ppData, pcbData); pickData != nil {
+			msg["pick_event"] = pickData
+		}
+	}
+
+	// === GENERIC FALLBACK HANDLING ===
+	// Handle any unhandled message types with basic raw data extraction
+	if !e.isHandledMessageType(recv.DwID) {
+		msg["unhandled"] = true
+		msg["raw_data"] = e.extractRawMessageData(ppData, pcbData)
+
+		// Optional: Log unhandled message types for monitoring
+		// This helps identify which message types are actually being received
+		// but not yet implemented
+		if e.shouldLogUnhandledMessage(recv.DwID) {
+			// Note: In production, you might want to use a proper logger
+			// and rate-limit these messages to avoid spam
+			_ = recv.DwID // Placeholder - replace with actual logging if needed
 		}
 	}
 
@@ -619,6 +671,231 @@ func (e *Engine) parseCustomActionData(ppData uintptr, pcbData uint32) *types.Cu
 	}
 
 	return result
+}
+
+// === NEW CRITICAL EVENT PARSERS ===
+
+// parseObjectAddRemoveData extracts object add/remove event data from SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE message
+func (e *Engine) parseObjectAddRemoveData(ppData uintptr, pcbData uint32) *types.ObjectAddRemoveData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE structure
+	objEvent := (*types.SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE)(unsafe.Pointer(ppData))
+	if objEvent.DwID != types.SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE {
+		return nil
+	}
+
+	// Determine action based on event ID (this is application-specific)
+	action := "unknown"
+	// Note: In practice, you would map specific event IDs to "added" or "removed"
+	// This requires knowledge of your registered event IDs
+
+	// Create object add/remove data structure for channel message
+	result := &types.ObjectAddRemoveData{
+		EventID:  objEvent.UEventID,
+		ObjectID: objEvent.DwData,
+		Action:   action,
+	}
+
+	return result
+}
+
+// parseFilenameEventData extracts filename event data from SIMCONNECT_RECV_EVENT_FILENAME message
+func (e *Engine) parseFilenameEventData(ppData uintptr, pcbData uint32) *types.FilenameEventData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_EVENT_FILENAME structure
+	filenameEvent := (*types.SIMCONNECT_RECV_EVENT_FILENAME)(unsafe.Pointer(ppData))
+	if filenameEvent.DwID != types.SIMCONNECT_RECV_ID_EVENT_FILENAME {
+		return nil
+	}
+
+	// Convert filename from byte array (find null terminator)
+	filename := ""
+	for i, b := range filenameEvent.SzFileName {
+		if b == 0 {
+			filename = string(filenameEvent.SzFileName[:i])
+			break
+		}
+	}
+
+	// Create filename event data structure for channel message
+	result := &types.FilenameEventData{
+		EventID:  filenameEvent.UEventID,
+		Flags:    filenameEvent.DwFlags,
+		GroupID:  filenameEvent.DwGroupID,
+		Filename: filename,
+	}
+
+	return result
+}
+
+// parseFrameEventData extracts frame event data from SIMCONNECT_RECV_EVENT_FRAME message
+func (e *Engine) parseFrameEventData(ppData uintptr, pcbData uint32) *types.FrameEventData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_EVENT_FRAME structure
+	frameEvent := (*types.SIMCONNECT_RECV_EVENT_FRAME)(unsafe.Pointer(ppData))
+	if frameEvent.DwID != types.SIMCONNECT_RECV_ID_EVENT_FRAME {
+		return nil
+	}
+
+	// Create frame event data structure for channel message
+	result := &types.FrameEventData{
+		FrameRate: frameEvent.DwFrameRate,
+		SimSpeed:  frameEvent.DwSimSpeed,
+	}
+
+	return result
+}
+
+// parseFacilityData extracts facility data from SIMCONNECT_RECV_FACILITY_DATA message
+func (e *Engine) parseFacilityData(ppData uintptr, pcbData uint32) *types.FacilityData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_FACILITY_DATA structure
+	facilityData := (*types.SIMCONNECT_RECV_FACILITY_DATA)(unsafe.Pointer(ppData))
+	if facilityData.DwID != types.SIMCONNECT_RECV_ID_FACILITY_DATA {
+		return nil
+	}
+
+	// The actual facility data follows the header
+	headerSize := unsafe.Sizeof(*facilityData)
+	var data interface{}
+
+	if pcbData > uint32(headerSize) {
+		// Extract raw data bytes for now
+		// In practice, this would be parsed based on the specific facility type
+		dataLen := pcbData - uint32(headerSize)
+		dataPtr := ppData + uintptr(headerSize)
+		dataBytes := make([]byte, dataLen)
+		for i := uint32(0); i < dataLen; i++ {
+			dataBytes[i] = *(*byte)(unsafe.Pointer(dataPtr + uintptr(i)))
+		}
+		data = dataBytes
+	}
+
+	// Create facility data structure for channel message
+	result := &types.FacilityData{
+		RequestID:    facilityData.DwRequestID,
+		ArraySize:    facilityData.DwArraySize,
+		EntryNumber:  facilityData.DwEntryNumber,
+		TotalEntries: facilityData.DwOutOf,
+		Data:         data,
+	}
+
+	return result
+}
+
+// parsePickEventData extracts pick event data from SIMCONNECT_RECV_PICK message
+func (e *Engine) parsePickEventData(ppData uintptr, pcbData uint32) *types.PickEventData {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Cast to the proper SIMCONNECT_RECV_PICK structure
+	pickEvent := (*types.SIMCONNECT_RECV_PICK)(unsafe.Pointer(ppData))
+	if pickEvent.DwID != types.SIMCONNECT_RECV_ID_PICK {
+		return nil
+	}
+
+	// Create pick event data structure for channel message
+	result := &types.PickEventData{
+		ObjectID:   pickEvent.DwObjectID,
+		PickType:   pickEvent.DwPickType,
+		PickSource: pickEvent.DwPickSource,
+	}
+
+	return result
+}
+
+// === GENERIC FALLBACK HELPER FUNCTIONS ===
+
+// isHandledMessageType checks if a message type has a specific parser implemented
+func (e *Engine) isHandledMessageType(messageType types.SimConnectRecvID) bool {
+	switch messageType {
+	case types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA,
+		types.SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE,
+		types.SIMCONNECT_RECV_ID_EXCEPTION,
+		types.SIMCONNECT_RECV_ID_EVENT,
+		types.SIMCONNECT_RECV_ID_EVENT_EX1,
+		types.SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID,
+		types.SIMCONNECT_RECV_ID_SYSTEM_STATE,
+		types.SIMCONNECT_RECV_ID_CLIENT_DATA,
+		types.SIMCONNECT_RECV_ID_CUSTOM_ACTION,
+		// New critical parsers
+		types.SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE,
+		types.SIMCONNECT_RECV_ID_EVENT_FILENAME,
+		types.SIMCONNECT_RECV_ID_EVENT_FRAME,
+		types.SIMCONNECT_RECV_ID_FACILITY_DATA,
+		types.SIMCONNECT_RECV_ID_PICK:
+		return true
+	default:
+		return false
+	}
+}
+
+// extractRawMessageData extracts basic information from unhandled message types
+func (e *Engine) extractRawMessageData(ppData uintptr, pcbData uint32) map[string]interface{} {
+	if ppData == 0 || pcbData == 0 {
+		return nil
+	}
+
+	// Extract just the basic header information safely
+	recv := (*types.SIMCONNECT_RECV)(unsafe.Pointer(ppData))
+
+	rawData := map[string]interface{}{
+		"header_size":    recv.DwSize,
+		"header_version": recv.DwVersion,
+		"message_id":     recv.DwID,
+		"total_bytes":    pcbData,
+	}
+
+	// Extract first few bytes of payload data if available
+	headerSize := unsafe.Sizeof(*recv)
+	if pcbData > uint32(headerSize) {
+		payloadSize := pcbData - uint32(headerSize)
+		if payloadSize > 0 {
+			// Limit to first 16 bytes to avoid large data dumps
+			maxBytes := uint32(16)
+			if payloadSize < maxBytes {
+				maxBytes = payloadSize
+			}
+
+			payloadPtr := ppData + uintptr(headerSize)
+			payload := make([]byte, maxBytes)
+			for i := uint32(0); i < maxBytes; i++ {
+				payload[i] = *(*byte)(unsafe.Pointer(payloadPtr + uintptr(i)))
+			}
+			rawData["payload_preview"] = payload
+			rawData["payload_size"] = payloadSize
+		}
+	}
+
+	return rawData
+}
+
+// shouldLogUnhandledMessage determines if an unhandled message type should be logged
+// This helps with rate limiting and focusing on important unhandled messages
+func (e *Engine) shouldLogUnhandledMessage(messageType types.SimConnectRecvID) bool {
+	// Skip logging for common/expected unhandled message types that we don't need
+	switch messageType {
+	case types.SIMCONNECT_RECV_ID_NULL,
+		types.SIMCONNECT_RECV_ID_OPEN,
+		types.SIMCONNECT_RECV_ID_QUIT:
+		return false // These are common and not critical to log
+	default:
+		// Log other unhandled types so we can see what's being missed
+		return true
+	}
 }
 
 // Helper functions for parsing different SimConnect data types
