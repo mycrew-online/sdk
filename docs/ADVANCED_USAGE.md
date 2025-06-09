@@ -1,6 +1,10 @@
 # Advanced Usage Guide
 
-This guide covers advanced usage patterns for the SimConnect Go SDK, including concurrent monitoring, multiple client scenarios, and best practices for production applications.
+This guide covers advanced usage patterns for the **mycrew-online/sdk** SimConnect Go SDK, including concurrent monitoring, multiple client scenarios, and best practices for production applications.
+
+> **Package**: `github.com/mycrew-online/sdk`  
+> **Target**: Microsoft Flight Simulator 2024/2020  
+> **Prerequisites**: Go 1.21+, SimConnect SDK
 
 ## Table of Contents
 
@@ -24,7 +28,10 @@ The SDK's `Listen()` method is designed to be called **only once per client inst
 // ❌ INCORRECT: Multiple Listen() calls on the same client
 sdk := client.New("MyApp")
 messages1 := sdk.Listen() // This works
-messages2 := sdk.Listen() // This returns the SAME channel as messages1
+messages2 := sdk.Listen() // This returns the SAME channel as messages1!
+
+// Both variables point to the same underlying channel
+fmt.Printf("Same channel: %t", messages1 == messages2) // true
 ```
 
 ```go
@@ -160,8 +167,21 @@ func (md *MessageDistributor) processFlightData(msg interface{}) {
     if msgMap, ok := msg.(map[string]any); ok {
         if parsedData, exists := msgMap["parsed_data"]; exists {
             if simVar, ok := parsedData.(*client.SimVarData); ok {
-                fmt.Printf("📊 Flight Data - DefineID: %d, Value: %v\n", 
-                    simVar.DefineID, simVar.Value)
+                // Type-safe value access based on registered data type
+                switch v := simVar.Value.(type) {
+                case float64:
+                    fmt.Printf("📊 Flight Data - DefineID: %d, Value: %.2f\n", 
+                        simVar.DefineID, v)
+                case int32:
+                    fmt.Printf("📊 Flight Data - DefineID: %d, Value: %d\n", 
+                        simVar.DefineID, v)
+                case string:
+                    fmt.Printf("📊 Flight Data - DefineID: %d, Value: %s\n", 
+                        simVar.DefineID, v)
+                default:
+                    fmt.Printf("📊 Flight Data - DefineID: %d, Value: %v (type: %T)\n", 
+                        simVar.DefineID, v, v)
+                }
             }
         }
     }
@@ -192,17 +212,19 @@ func main() {
 
     if err := sdk.Open(); err != nil {
         panic(err)
+    }    // Register multiple variables with appropriate data types
+    variables := map[uint32]struct {
+        name     string
+        units    string
+        dataType types.SimConnectDataType
+    }{
+        1: {"PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32},
+        2: {"AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32},
+        3: {"HEADING INDICATOR", "degrees", types.SIMCONNECT_DATATYPE_FLOAT32},
     }
 
-    // Register multiple variables
-    variables := map[uint32]string{
-        1: "PLANE ALTITUDE",
-        2: "AIRSPEED INDICATED",
-        3: "HEADING INDICATOR",
-    }
-
-    for id, name := range variables {
-        sdk.RegisterSimVarDefinition(id, name, "feet", types.SIMCONNECT_DATATYPE_FLOAT32)
+    for id, variable := range variables {
+        sdk.RegisterSimVarDefinition(id, variable.name, variable.units, variable.dataType)
         sdk.RequestSimVarDataPeriodic(id, id*100, types.SIMCONNECT_PERIOD_SECOND)
     }
 
@@ -218,8 +240,7 @@ func main() {
 
     // Run for demonstration
     time.Sleep(30 * time.Second)
-    
-    // Cleanup
+      // Cleanup
     for id := range variables {
         sdk.StopPeriodicRequest(id * 100)
     }
@@ -975,4 +996,37 @@ func (rm *ResourceMonitor) logStats() {
 }
 ```
 
-This advanced usage guide demonstrates how to build robust, concurrent applications with the SimConnect Go SDK while respecting its design constraints and leveraging Go's concurrency primitives effectively.
+```
+
+## Summary and Next Steps
+
+This advanced usage guide demonstrates how to build robust, concurrent applications with the mycrew-online/sdk SimConnect Go SDK while respecting its design constraints and leveraging Go's concurrency primitives effectively.
+
+### Key Takeaways
+
+1. **Single Listen() Pattern**: Always call `Listen()` only once per client instance
+2. **Fan-Out Architecture**: Use message distribution patterns for concurrent processing
+3. **Multiple Clients**: Use separate client instances for different concerns or performance requirements
+4. **Type Safety**: Always use proper type assertions when processing message data
+5. **Resource Management**: Implement proper cleanup and monitoring for production systems
+
+### Production Checklist
+
+- [ ] Implement connection recovery and health monitoring
+- [ ] Use appropriate logging levels and structured logging
+- [ ] Monitor memory usage and implement resource limits
+- [ ] Handle all SimConnect exceptions gracefully
+- [ ] Test with various simulator scenarios (pause, aircraft changes, etc.)
+- [ ] Implement proper shutdown handling with cleanup
+- [ ] Use configuration files for variable monitoring setups
+- [ ] Consider rate limiting for high-frequency data processing
+
+### Further Reading
+
+- **[API Reference](API.md)** - Complete method documentation
+- **[Examples Guide](EXAMPLES.md)** - Working code examples
+- **[Performance Guide](PERFORMANCE.md)** - Optimization strategies
+- **[Production Guide](PRODUCTION.md)** - Deployment patterns
+- **[Error Handling](ERROR_HANDLING.md)** - Comprehensive error management
+
+For the latest updates and community contributions, visit the [GitHub repository](https://github.com/mycrew-online/sdk).

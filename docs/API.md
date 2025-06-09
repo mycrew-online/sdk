@@ -1,15 +1,30 @@
 # API Reference
 
-Complete reference for the SimConnect Go SDK API.
+Complete reference for the mycrew-online/sdk SimConnect Go SDK API.
+
+> **Package**: `github.com/mycrew-online/sdk`  
+> **Go Version**: 1.21+  
+> **Target**: Microsoft Flight Simulator 2024/2020
 
 ## Table of Contents
 
+- [Package Import](#package-import)
 - [Client Creation](#client-creation)
 - [Connection Management](#connection-management)
 - [SimVar Operations](#simvar-operations)
 - [Event Management](#event-management)
 - [Data Types](#data-types)
 - [Error Handling](#error-handling)
+- [Message Processing](#message-processing)
+
+## Package Import
+
+```go
+import (
+    "github.com/mycrew-online/sdk/pkg/client"
+    "github.com/mycrew-online/sdk/pkg/types"
+)
+```
 
 ## Client Creation
 
@@ -332,8 +347,38 @@ const (
 ```go
 type SimVarData struct {
     RequestID uint32      // Request identifier
-    DefineID  uint32      // Variable definition ID
-    Value     interface{} // Parsed value (int32, float64, string)
+    DefineID  uint32      // Variable definition ID  
+    Value     interface{} // Parsed value - type depends on registered data type
+}
+```
+
+**Value Types by Data Type:**
+- `SIMCONNECT_DATATYPE_FLOAT32` → `float64` (Go promotes float32 to float64)
+- `SIMCONNECT_DATATYPE_FLOAT64` → `float64`
+- `SIMCONNECT_DATATYPE_INT32` → `int32`
+- `SIMCONNECT_DATATYPE_INT64` → `int64`
+- `SIMCONNECT_DATATYPE_STRINGV` → `string`
+- `SIMCONNECT_DATATYPE_STRING*` → `string` (fixed-length strings)
+- Structure types → corresponding Go struct pointers
+
+**Type Assertion Examples:**
+```go
+if msgMap, ok := msg.(map[string]any); ok && msgMap["type"] == "SIMOBJECT_DATA" {
+    if data, exists := msgMap["parsed_data"]; exists {
+        if simVar, ok := data.(*client.SimVarData); ok {
+            switch simVar.DefineID {
+            case 1: // Altitude (FLOAT32)
+                altitude := simVar.Value.(float64)
+                fmt.Printf("Altitude: %.0f feet\n", altitude)
+            case 2: // Master Battery (INT32)  
+                batteryOn := simVar.Value.(int32)
+                fmt.Printf("Battery: %s\n", map[int32]string{0: "OFF", 1: "ON"}[batteryOn])
+            case 3: // Aircraft Title (STRINGV)
+                title := simVar.Value.(string)
+                fmt.Printf("Aircraft: %s\n", title)
+            }
+        }
+    }
 }
 ```
 
@@ -370,9 +415,177 @@ type ExceptionData struct {
 }
 ```
 
-## Error Handling
+## Message Processing
 
-### Exception Types
+### Channel Message Structure
+
+All messages from `Listen()` are structured as `map[string]any` with common fields:
+
+```go
+type ChannelMessage map[string]any
+
+// Common fields in all messages:
+// "type"       string  - Message type ("SIMOBJECT_DATA", "EVENT", "EXCEPTION", etc.)
+// "id"         uint32  - SimConnect message ID
+// "size"       uint32  - Message size in bytes
+// "version"    uint32  - SimConnect version
+```
+
+### Processing Different Message Types
+
+```go
+messages := sdk.Listen()
+for msg := range messages {
+    if msgMap, ok := msg.(map[string]any); ok {
+        switch msgMap["type"] {
+        case "SIMOBJECT_DATA":
+            // Flight data updates
+            if data, exists := msgMap["parsed_data"]; exists {
+                if simVar, ok := data.(*client.SimVarData); ok {
+                    processFlightData(simVar)
+                }
+            }
+            
+        case "EVENT":
+            // System and client events
+            if eventData, exists := msgMap["event"]; exists {
+                if event, ok := eventData.(*types.EventData); ok {
+                    processEvent(event)
+                }
+            }
+            
+        case "EXCEPTION":
+            // SimConnect exceptions
+            if exceptionData, exists := msgMap["exception"]; exists {
+                if exception, ok := exceptionData.(*types.ExceptionData); ok {
+                    handleException(exception)
+                }
+            }
+        }
+    }
+}
+```
+
+### Best Practices
+
+- **Single Listen() Call**: Call `Listen()` only once per client instance
+- **Type Assertions**: Always use type assertions when accessing parsed data
+- **Error Handling**: Check for exception messages and handle appropriately  
+- **Resource Cleanup**: Stop periodic requests before closing connections
+
+```go
+// ✅ Correct pattern
+sdk := client.New("MyApp")
+defer sdk.Close()
+
+messages := sdk.Listen() // Call only once
+// Use messages channel for all processing
+
+// ❌ Incorrect pattern  
+messages1 := sdk.Listen()
+messages2 := sdk.Listen() // Returns same channel!
+```
+
+## Complete Example
+
+Here's a complete example demonstrating the most common API usage patterns:
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+    
+    "github.com/mycrew-online/sdk/pkg/client"
+    "github.com/mycrew-online/sdk/pkg/types"
+)
+
+func main() {
+    // Create and connect
+    sdk := client.New("APIExample")
+    defer sdk.Close()
+    
+    if err := sdk.Open(); err != nil {
+        panic(fmt.Sprintf("Failed to connect: %v", err))
+    }
+    
+    // Register variables with appropriate data types
+    sdk.RegisterSimVarDefinition(1, "PLANE ALTITUDE", "feet", types.SIMCONNECT_DATATYPE_FLOAT32)
+    sdk.RegisterSimVarDefinition(2, "AIRSPEED INDICATED", "knots", types.SIMCONNECT_DATATYPE_FLOAT32)
+    sdk.RegisterSimVarDefinition(3, "ELECTRICAL MASTER BATTERY", "Bool", types.SIMCONNECT_DATATYPE_INT32)
+    
+    // Request periodic updates
+    sdk.RequestSimVarDataPeriodic(1, 100, types.SIMCONNECT_PERIOD_SECOND)
+    sdk.RequestSimVarDataPeriodic(2, 200, types.SIMCONNECT_PERIOD_SECOND)
+    sdk.RequestSimVarDataPeriodic(3, 300, types.SIMCONNECT_PERIOD_ON_SET)
+    
+    // Subscribe to system events
+    sdk.SubscribeToSystemEvent(1001, "Pause")
+    
+    // Set up event control
+    sdk.MapClientEventToSimEvent(2001, "TOGGLE_MASTER_BATTERY")
+    sdk.AddClientEventToNotificationGroup(3000, 2001, false)
+    sdk.SetNotificationGroupPriority(3000, types.SIMCONNECT_GROUP_PRIORITY_HIGHEST)
+    
+    // Process messages
+    messages := sdk.Listen()
+    timeout := time.After(30 * time.Second)
+    
+    for {
+        select {
+        case msg := <-messages:
+            processMessage(msg)
+        case <-timeout:
+            fmt.Println("Example completed")
+            return
+        }
+    }
+}
+
+func processMessage(msg any) {
+    msgMap, ok := msg.(map[string]any)
+    if !ok {
+        return
+    }
+    
+    switch msgMap["type"] {
+    case "SIMOBJECT_DATA":
+        if data, exists := msgMap["parsed_data"]; exists {
+            if simVar, ok := data.(*client.SimVarData); ok {
+                switch simVar.DefineID {
+                case 1:
+                    altitude := simVar.Value.(float64)
+                    fmt.Printf("Altitude: %.0f feet\n", altitude)
+                case 2:
+                    airspeed := simVar.Value.(float64)
+                    fmt.Printf("Airspeed: %.0f knots\n", airspeed)
+                case 3:
+                    battery := simVar.Value.(int32)
+                    fmt.Printf("Battery: %s\n", map[int32]string{0: "OFF", 1: "ON"}[battery])
+                }
+            }
+        }
+        
+    case "EVENT":
+        if eventData, exists := msgMap["event"]; exists {
+            if event, ok := eventData.(*types.EventData); ok {
+                fmt.Printf("System event: %s (value: %d)\n", event.EventName, event.EventData)
+            }
+        }
+        
+    case "EXCEPTION":
+        if exceptionData, exists := msgMap["exception"]; exists {
+            if exception, ok := exceptionData.(*types.ExceptionData); ok {
+                fmt.Printf("SimConnect exception: %s - %s\n", 
+                    exception.ExceptionName, exception.Description)
+            }
+        }
+    }
+}
+```
+
+## Error Handling
 
 The SDK handles all SimConnect exceptions and provides detailed error information:
 
@@ -436,7 +649,57 @@ func connectWithRetry(sdk client.Connection, maxRetries int) error {
             return nil
         }
         time.Sleep(time.Duration(i+1) * time.Second)
-    }
-    return fmt.Errorf("failed to connect after %d retries", maxRetries)
+    }    return fmt.Errorf("failed to connect after %d retries", maxRetries)
 }
 ```
+
+## See Also
+
+### Documentation
+
+- **[Getting Started](GETTING_STARTED.md)** - Setup and installation guide
+- **[Examples Guide](EXAMPLES.md)** - Complete working examples  
+- **[Advanced Usage](ADVANCED_USAGE.md)** - Concurrent patterns and production architectures
+- **[Performance Guide](PERFORMANCE.md)** - Optimization techniques and best practices
+- **[SimVars Reference](SIMVARS.md)** - Complete variable reference with units and data types
+- **[Error Handling](ERROR_HANDLING.md)** - Comprehensive error management strategies
+
+### Key Concepts
+
+- **Single Listen() Pattern**: Always call `Listen()` only once per client instance
+- **Type Safety**: Use proper type assertions when processing message data  
+- **Resource Management**: Stop periodic requests before closing connections
+- **Data Types**: Choose appropriate SimConnect data types for your variables
+- **Update Frequencies**: Use the minimum required frequency for optimal performance
+
+### Quick Reference
+
+```go
+// Essential imports
+import (
+    "github.com/mycrew-online/sdk/pkg/client"
+    "github.com/mycrew-online/sdk/pkg/types"
+)
+
+// Basic workflow
+sdk := client.New("AppName")
+defer sdk.Close()
+sdk.Open()
+
+// Register -> Request -> Listen -> Process
+sdk.RegisterSimVarDefinition(id, name, units, dataType)
+sdk.RequestSimVarDataPeriodic(id, requestID, period)
+messages := sdk.Listen()
+
+// Always handle all message types
+for msg := range messages {
+    if msgMap, ok := msg.(map[string]any); ok {
+        switch msgMap["type"] {
+        case "SIMOBJECT_DATA", "EVENT", "EXCEPTION":
+            // Process accordingly
+        }
+    }
+}
+```
+
+For the latest updates and community contributions, visit the [GitHub repository](https://github.com/mycrew-online/sdk).
