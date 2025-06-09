@@ -337,7 +337,7 @@ go run main.go
 ### Getting Help
 
 1. **Check Logs:** Enable detailed logging for debugging
-2. **Review Examples:** Study working examples in the `example/` directory
+2. **Review Examples:** Study the sim-webservice example in the `example/` directory and code samples in the [Examples Guide](EXAMPLES.md)
 3. **Community:** Check GitHub issues and discussions
 4. **Documentation:** Refer to complete API documentation
 

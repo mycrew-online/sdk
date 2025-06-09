@@ -1,6 +1,8 @@
 # Examples Guide
 
-Complete working examples for common SimConnect scenarios, from basic monitoring to advanced applications.
+Complete working code samples for common SimConnect scenarios, from basic monitoring to advanced applications.
+
+> **Note**: This guide contains code snippets and samples. For a complete working project example, see the **sim-webservice** in the `example/` directory.
 
 ## Table of Contents
 
